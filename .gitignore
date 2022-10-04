@@ -1,0 +1,7 @@
+wav/*
+tools/*65
+build/*.o
+build/*.nes
+build/*.dbg
+src/.*
+build/**/.*
