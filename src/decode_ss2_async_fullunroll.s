@@ -11,9 +11,9 @@
 
 .segment "DECODE"
 
-.proc jump_z0_indirect
-	jmp ($0000)
-.endproc
+;.proc jump_z0_indirect
+;	jmp ($0000)
+;.endproc
 
 ; Fills the sample buffer with as many samples as possible.
 .export fill_buffer
@@ -59,13 +59,11 @@ SMC_Import idx_smc_pcm_playback
 
 	slope0   = $2
 	slope1   = $3
-	byte_idx = $4
 
 	lda slopes_bank
 	jsr mapper_set_bank_8000
 
 	ldy #$00
-	;sty byte_idx
 	lda (ptr_slopes), y
 	sta slope0
 	iny                     ; y = 1
@@ -77,27 +75,22 @@ SMC_Import idx_smc_pcm_playback
 	
 	ldy #$00
 	decode_byte:
-	.repeat 16
 		lda (ptr_bitstream), y              ; load byte in bitstream
 		tax
-		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this byte
 		sta $0
 		lda decode_byte_jump_tbl_high, x
 		sta $1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
-		jsr jump_z0_indirect                ; jump to fetched address
-				
+		jmp ($0000)                         ; jump to fetched address
+	decode_jump_table_return:
 		sta last_sample
 		stx idx_pcm_decode
 		iny
-	.endrepeat
-		
-		;inc byte_idx
-		;ldy byte_idx
-		;cpy #16
-		;bne decode_byte
+		cpy #16
+		bne decode_byte
 
 @after:
 	; Bitstream pointer update
@@ -169,7 +162,7 @@ SMC_Import idx_smc_pcm_playback
 		.ident (.sprintf ("decode_code_%x", (by >> 4) & $03))
 		.ident (.sprintf ("decode_code_%x", (by >> 2) & $03))
 		.ident (.sprintf ("decode_code_%x", by & $03))
-		rts
+		jmp decode_jump_table_return
 	.endmacro
 
 .segment "DECODE_UNROLL"

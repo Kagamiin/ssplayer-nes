@@ -16,18 +16,20 @@ objects := \
 	ssplayer.o \
 	superblocks.o \
 	playback_irq.o \
-	decode_ss2_async.o \
+	decode_ss2_async_fullunroll.o \
 	mapper_funcs.o \
 	ram_locations.o
 
 includes := \
 	utils.inc
 
+cfgfile := vrc4/ssplayer-128k.cfg
+
 
 all: build_dirs ssplayer.nes
 
 ssplayer.nes: $(objects) $(SRC_DIR)/vrc4/ssplayer.cfg
-	$(LD65) -o $(BUILD_DIR)/ssplayer.nes -C $(SRC_DIR)/vrc4/ssplayer.cfg --dbgfile $(BUILD_DIR)/ssplayer.dbg $(patsubst %,$(BUILD_DIR)/%,$(objects))
+	$(LD65) -o $(BUILD_DIR)/ssplayer.nes -C $(SRC_DIR)/$(cfgfile) --dbgfile $(BUILD_DIR)/ssplayer.dbg $(patsubst %,$(BUILD_DIR)/%,$(objects))
 
 superblocks.o: superblocks.s $(includes)
 	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR) --include-dir $(SAMPLES_DIR)
