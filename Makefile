@@ -8,28 +8,29 @@ SAMPLES_DIR := $(BUILD_DIR)/samples
 vpath %.o $(BUILD_DIR)
 vpath %.nes $(BUILD_DIR)
 vpath %.inc $(SRC_DIR) $(CODEGEN_DIR)
-vpath %.s $(SRC_DIR) $(CODEGEN_DIR)
+vpath %.s $(SRC_DIR) $(SRC_DIR)/vrc4 $(CODEGEN_DIR)
 
 .PHONY: build_dirs all clean
 
 objects := \
-	decode.o \
-	decode_codegen.o \
 	ssplayer.o \
 	superblocks.o \
+	playback_irq.o \
+	decode_ss2_async.o \
+	mapper_funcs.o \
 	ram_locations.o
 
 includes := \
-	playback.inc
+	utils.inc
 
 
 all: build_dirs ssplayer.nes
 
-ssplayer.nes: $(objects) $(SRC_DIR)/ssplayer.cfg
-	$(LD65) -o $(BUILD_DIR)/ssplayer.nes -C $(SRC_DIR)/ssplayer.cfg --dbgfile $(BUILD_DIR)/ssplayer.nes.dbg $(patsubst %,$(BUILD_DIR)/%,$(objects))
+ssplayer.nes: $(objects) $(SRC_DIR)/vrc4/ssplayer.cfg
+	$(LD65) -o $(BUILD_DIR)/ssplayer.nes -C $(SRC_DIR)/vrc4/ssplayer.cfg --dbgfile $(BUILD_DIR)/ssplayer.dbg $(patsubst %,$(BUILD_DIR)/%,$(objects))
 
-superblocks.o: superblocks.s $(includes) binaries.inc
-	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)
+superblocks.o: superblocks.s $(includes)
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR) --include-dir $(SAMPLES_DIR)
 
 %.o: %.s $(includes)
 	$(CA65) $< -g -o $(BUILD_DIR)/$@
