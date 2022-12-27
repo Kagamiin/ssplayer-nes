@@ -1,4 +1,5 @@
 .include "smc.inc"
+.include "nes_mmio.inc"
 
 .globalzp idx_superblock, idx_block, idx_pcm_decode
 .globalzp ptr_bitstream, ptr_slopes, superblock_length, last_sample
@@ -11,29 +12,9 @@
 
 .segment "DECODE"
 
-.proc jump_z0_indirect
-	jmp ($0000)
-.endproc
-
-; Fills the sample buffer with as many samples as possible.
-.export fill_buffer
-.proc fill_buffer
-
-SMC_Import idx_smc_pcm_playback
-
-@buffer_check:
-	SMC_LoadLowByte idx_smc_pcm_playback, a
-	sec
-	sbc idx_pcm_decode
-	cmp #64
-	bcs @fill_buffer           ; if there's at least 64 samples of slack, go fill the buffer
-	rts
-	
-@fill_buffer:
-	jsr decode_ss2_async       ; go decode a block
-	jmp @buffer_check          ; check again
-	
-.endproc
+;.proc jump_z0_indirect
+;	jmp ($0000)
+;.endproc
 
 ; Decodes 16 bytes (64 samples) of 2-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
@@ -59,13 +40,11 @@ SMC_Import idx_smc_pcm_playback
 
 	slope0   = $2
 	slope1   = $3
-	byte_idx = $4
 
 	lda slopes_bank
 	jsr mapper_set_bank_8000
 
 	ldy #$00
-	sty byte_idx
 	lda (ptr_slopes), y
 	sta slope0
 	iny                     ; y = 1
@@ -75,46 +54,22 @@ SMC_Import idx_smc_pcm_playback
 	lda bits_bank
 	jsr mapper_set_bank_8000
 	
-	ldy byte_idx
+	ldy #$00
 	decode_byte:
 		lda (ptr_bitstream), y              ; load byte in bitstream
-		lsr a                               ; extract upper nibble
-		lsr a
-		lsr a
-		lsr a
 		tax
-		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this byte
 		sta $0
 		lda decode_byte_jump_tbl_high, x
 		sta $1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
-		jsr jump_z0_indirect                ; jump to fetched address
-		; --------------------------------- ;
-		
+		jmp ($0000)                         ; jump to fetched address
+	decode_jump_table_return:
 		sta last_sample
 		stx idx_pcm_decode
-		
-		ldy byte_idx
-		lda (ptr_bitstream), y              ; load byte in bitstream
-		and #$0f                            ; extract upper nibble
-		tax
-		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
-		sta $0
-		lda decode_byte_jump_tbl_high, x
-		sta $1
-		
-		lda last_sample                     ; load temporary regs
-		ldx idx_pcm_decode
-		jsr jump_z0_indirect                ; jump to fetched address
-		; --------------------------------- ;
-		
-		sta last_sample
-		stx idx_pcm_decode
-		
-		inc byte_idx
-		ldy byte_idx
+		iny
 		cpy #16
 		bne decode_byte
 
@@ -182,25 +137,29 @@ SMC_Import idx_smc_pcm_playback
 		inx
 	.endmacro
 
-	.macro decode_nibble nib
-	.ident (.sprintf ("decode_nibble_%x", nib)):
-		.ident (.sprintf ("decode_code_%x", (nib >> 2) & $03))
-		.ident (.sprintf ("decode_code_%x", nib & $03))
-		rts
+	.macro decode_byte by
+	.ident (.sprintf ("decode_byte_%02x", by)):
+		.ident (.sprintf ("decode_code_%x", (by >> 6) & $03))
+		.ident (.sprintf ("decode_code_%x", (by >> 4) & $03))
+		.ident (.sprintf ("decode_code_%x", (by >> 2) & $03))
+		.ident (.sprintf ("decode_code_%x", by & $03))
+		jmp decode_jump_table_return
 	.endmacro
 
-	.repeat 16, nib
-		decode_nibble nib
+.segment "DECODE_UNROLL"
+	.repeat 256, by
+		decode_byte by
 	.endrepeat
 
+.segment "DECODE_TABLES"
 	decode_byte_jump_tbl_low:
-	.repeat 16, nib
-		.byte (.lobyte (.ident (.sprintf ("decode_nibble_%x", nib))))
+	.repeat 256, by
+		.byte (.lobyte (.ident (.sprintf ("decode_byte_%02x", by))))
 	.endrepeat
 	
 	decode_byte_jump_tbl_high:
-	.repeat 16, nib
-		.byte (.hibyte (.ident (.sprintf ("decode_nibble_%x", nib))))
+	.repeat 256, by
+		.byte (.hibyte (.ident (.sprintf ("decode_byte_%02x", by))))
 	.endrepeat
 	
 .endproc
