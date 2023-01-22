@@ -4,7 +4,6 @@
 
 .segment "HEADER"
 
-.import __PLAYBACK_CODE_LOAD__, __PLAYBACK_CODE_RUN__, __PLAYBACK_CODE_SIZE__
 .import INES_MAPPER, INES_SRAM, INES_MIRROR, INES_CHR_BANKS, INES_PRG_BANKS
 
 	.byte 'N', 'E', 'S', $1A ; ID
@@ -27,6 +26,7 @@
 
 ; ---------------------------------------------------------------------------
 .proc load_playback_code
+.import __PLAYBACK_CODE_LOAD__, __PLAYBACK_CODE_RUN__, __PLAYBACK_CODE_SIZE__
 	ldx #<__PLAYBACK_CODE_SIZE__
 	@loop:
 		dex
@@ -45,6 +45,7 @@
 .globalzp irq_latch_value
 .import mapper_init, mapper_irq_set_period, mapper_irq_disable, mapper_irq_enable
 .import decode_ss2_async, load_next_superblock
+.global oam_dma_enable, oam_dma_sample_skip_cnt
 
 	jsr mapper_init
 	ldx #$ff
@@ -75,13 +76,15 @@
 	
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(256 - 114)             ; 114 clock cycles per sample = ~15.7 KHz
+	lda #(256 - 127)             ; 127 clock cycles per sample = ~14093 Hz
 	sta irq_latch_value
 	jsr mapper_irq_set_period
 	jsr mapper_irq_enable
-	lda #0
-	pha
-	plp                          ; enable interrupts, so samples can play
+	cli                          ; enable interrupts, so samples can play
+	
+	lda #4
+	sta oam_dma_sample_skip_cnt  ; setup flags to enable OAM DMA
+	sta oam_dma_enable
 	
 	lda #$88
 	sta PPUCTRL                  ; setup PPUCTRL, enable NMI
