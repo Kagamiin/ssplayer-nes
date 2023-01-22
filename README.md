@@ -1,19 +1,19 @@
 # ssplayer-nes
 
-Sample player for NES using SSDPCM codec (originally designed by "Algorithm").
+Sample player for **NES** using **SSDPCM*8 codec (originally designed by "Algorithm").
 
 # Features
 
-- Cycle-based IRQ-driven playback
-- Buffered decompression driven from NMI
-  - 256-byte buffer
+- Cycle-based **IRQ-driven** playback
+- **Buffered decompression** driven by NMI for **easy integration*8 into games and demos
+  - 256-byte buffer - fits all sample rates
   - Automatic predictive buffer filling - fills buffer with as many samples as needed for an entire frame
-- Variable sample rates up to 23.2 KHz
+- **Variable sample rates** up to 23.2 KHz
   - Even higher sample rates possible via decompression without NMI-based buffering _(TODO: test how high it can go)_
-- SSDPCM compression ratio of roughly 1:4 (2.13 bit/sample)
-  - 1:8 compression ratio (1.06 bit/sample) also possible, with quality way superior to standard NES DPCM
-- NTSC support only (for now)
-  - Dendy support can be easily added with some hacking, but PAL support might need a different prediction table _(TODO verify)_
+- **SSDPCM** compression ratio of roughly 1:4 (2.13 bit/sample)
+  - 1:8 compression ratio (1.06 bit/sample) also possible, with quality way superior to standard NES **DPCM**
+- **NTSC** support only (for now)
+  - **Dendy** support can be easily added with some hacking, but **PAL** support might need a different prediction table _(TODO verify)_
 
 # Decompression routines
 
@@ -39,7 +39,7 @@ I don't know if I'll explore other SSDPCM variants by Algorithm (such as SSDPCM1
 
 Currently the following mappers are supported in the code (and selectable inside the makefile):
 
-- **Konamic VRC4** (easily portable to **VRC6**/**VRC7**)
+- **Konami VRC4** (easily portable to **VRC6**/**VRC7**)
 - **Nintendo MMC5A***
 - **Namco 163**
 
