@@ -9,7 +9,7 @@
 	rts
 .endproc
 
-; Sets up an 8KiB bank at $8000..$9FFF
+; Sets up an 8KiB bank at $8000..$9fff
 ; uses:
 ;	a = bank number
 .export mapper_set_bank_8000
@@ -18,7 +18,7 @@
 	rts
 .endproc
 
-; Sets up an 8KiB bank at $A000..$BFFF
+; Sets up an 8KiB bank at $a000..$bfff
 ; uses:
 ;	a = bank number
 .export mapper_set_bank_a000

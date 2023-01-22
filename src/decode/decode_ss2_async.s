@@ -1,20 +1,7 @@
 .include "smc.inc"
 .include "nes_mmio.inc"
 
-.globalzp idx_superblock, idx_block, idx_pcm_decode
-.globalzp ptr_bitstream, ptr_slopes, superblock_length, last_sample
-.globalzp bits_bank, slopes_bank
-
-.import sblk_table, num_sblk_headers
-.import mapper_set_bank_8000
-
-.global buf_pcm
-
 .segment "DECODE"
-
-.proc jump_z0_indirect
-	jmp ($0000)
-.endproc
 
 ; Decodes 16 bytes (64 samples) of 2-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
@@ -27,26 +14,40 @@
 ;	superblock_length
 ;	last_sample
 ;	ptr_bitstream
+;	ptr_slopes
 ; updates:
 ;	idx_block
 ;	idx_pcm_decode
 ;	last_sample
 ;	ptr_bitstream
+;	ptr_slopes
 ; clobbers:
 ;	a, x, y
 ;       zp $0..$4
 .export decode_ss2_async
 .proc decode_ss2_async
 
+	.globalzp bits_bank, slopes_bank
+	.globalzp idx_block, idx_pcm_decode, idx_superblock
+	.globalzp superblock_length, last_sample, ptr_bitstream, ptr_slopes
+
+	.import sblk_table, num_sblk_headers
+	.import mapper_set_bank_8000
+	.import load_next_superblock
+
+	.global buf_pcm
+
+	z0       = $0
 	slope0   = $2
 	slope1   = $3
 	byte_idx = $4
+
+.segment "DECODE"
 
 	lda slopes_bank
 	jsr mapper_set_bank_8000
 
 	ldy #$00
-	sty byte_idx
 	lda (ptr_slopes), y
 	sta slope0
 	iny                     ; y = 1
@@ -56,7 +57,7 @@
 	lda bits_bank
 	jsr mapper_set_bank_8000
 	
-	ldy byte_idx
+	ldy #$00
 	decode_byte:
 		lda (ptr_bitstream), y              ; load byte in bitstream
 		lsr a                               ; extract upper nibble
@@ -65,37 +66,37 @@
 		lsr a
 		tax
 		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
-		sta $0
+		sta z0
 		lda decode_byte_jump_tbl_high, x
-		sta $1
+		sta z0+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
 		jsr jump_z0_indirect                ; jump to fetched address
 		; --------------------------------- ;
-		
+		inx
+		inx
 		sta last_sample
 		stx idx_pcm_decode
 		
-		ldy byte_idx
 		lda (ptr_bitstream), y              ; load byte in bitstream
 		and #$0f                            ; extract upper nibble
 		tax
 		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
-		sta $0
+		sta z0
 		lda decode_byte_jump_tbl_high, x
-		sta $1
+		sta z0+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
 		jsr jump_z0_indirect                ; jump to fetched address
 		; --------------------------------- ;
-		
+		inx
+		inx
 		sta last_sample
 		stx idx_pcm_decode
 		
-		inc byte_idx
-		ldy byte_idx
+		iny
 		cpy #16
 		bne decode_byte
 
@@ -135,38 +136,52 @@
 @skip:
 	rts
 
-	.macro decode_code_0
-		clc
-		adc slope0
-		sta buf_pcm, x
-		inx
+	.macro adc_slope_id    idx
+		adc .ident (.sprintf ("slope%x", (idx)))
 	.endmacro
 
-	.macro decode_code_1
-		clc
-		adc slope1
-		sta buf_pcm, x
-		inx
+	.macro sbc_slope_id    idx
+		sbc .ident (.sprintf ("slope%x", (idx)))
 	.endmacro
 
-	.macro decode_code_2
-		sec
-		sbc slope0
-		sta buf_pcm, x
-		inx
+	.macro decode_internal    code, last_code
+		; To save time, only change carry if last_code has a different sign than code
+		; (or if it's omitted)
+		.ifblank last_code
+			.if code & $02
+				sec
+			.else
+				clc
+			.endif
+		.elseif (code & $02) <> (last_code & $02)
+			.if code & $02
+				sec
+			.else
+				clc
+			.endif
+		.endif
+		
+		.if code & $02
+			sbc_slope_id (code & $01)
+		.else
+			adc_slope_id (code & $01)
+		.endif
 	.endmacro
 
-	.macro decode_code_3
-		sec
-		sbc slope1
+	.macro decode_code_offs0    code, last_code
+		decode_internal code, last_code
 		sta buf_pcm, x
-		inx
+	.endmacro
+	
+	.macro decode_code_offs1    code, last_code
+		decode_internal code, last_code
+		sta buf_pcm+1, x
 	.endmacro
 
-	.macro decode_nibble nib
+	.macro decode_nibble    nib
 	.ident (.sprintf ("decode_nibble_%x", nib)):
-		.ident (.sprintf ("decode_code_%x", (nib >> 2) & $03))
-		.ident (.sprintf ("decode_code_%x", nib & $03))
+		decode_code_offs0 (nib >> 2) & $03,
+		decode_code_offs1 nib & $03,        (nib >> 2) & $03
 		rts
 	.endmacro
 
@@ -183,88 +198,12 @@
 	.repeat 16, nib
 		.byte (.hibyte (.ident (.sprintf ("decode_nibble_%x", nib))))
 	.endrepeat
-	
+
+		
+	.proc jump_z0_indirect
+		jmp (z0)
+	.endproc
+
 .endproc
 
 
-; Loads the next superblock in the stream.
-; If end of superblock list is reached, loops back to the beginning.
-; uses:
-;	idx_superblock
-; updates:
-;	idx_block
-;	idx_superblock
-;       bits_bank
-;       slopes_bank
-;	ptr_bitstream
-;	ptr_slopes
-;	last_sample
-;	superblock_length
-; clobbers:
-;	a, x, y
-.export load_next_superblock
-.proc load_next_superblock
-	
-	header_ptr = $0
-	header_offset_hi = $2
-	
-	ldy #00                          ; set first block in superblock
-	sty idx_block                    ;
-
-	lda idx_superblock
-	cmp num_sblk_headers             ; check if we're past the last superblock
-	bne @continue
-	;                                ; if so...
-	sty idx_superblock               ; loop back to first superblock (y = 0)
-	tya
-@continue:                               ; (a = idx_superblock)
-	;                                ; calculate header offset
-	sty header_offset_hi             ; zero out high byte of offset (y = 0)
-	
-	asl a                            ; 16-bit multiply superblock index by 8
-	rol header_offset_hi             ; shift 3 bits into high byte of offset
-	asl a
-	rol header_offset_hi
-	asl a
-	rol header_offset_hi
-	
-	clc
-	ldx #<sblk_table                 ; load low byte of base ptr
-	stx header_ptr
-	adc header_ptr                   ; add low byte of offset to low byte of base ptr
-	sta header_ptr
-	lda #>sblk_table                 ; load high byte of base ptr
-	adc header_offset_hi             ; add (with carry) high byte of offset to high byte of base ptr
-	sta header_ptr + 1
-
-	lda (header_ptr), y              ; bits_bank (y = 0)
-	sta bits_bank
-	
-	iny                              ; (y = 1)
-	lda (header_ptr), y              ; slopes_bank
-	sta slopes_bank
-	
-	iny                              ; (y = 2)
-	lda (header_ptr), y              ; bits (ptr low byte)
-	sta ptr_bitstream
-	iny                              ; (y = 3)
-	lda (header_ptr), y              ; bits (ptr high byte)
-	sta ptr_bitstream + 1
-	
-	iny                              ; (y = 4)
-	lda (header_ptr), y              ; slopes (ptr low byte)
-	sta ptr_slopes
-	iny                              ; (y = 5)
-	lda (header_ptr), y              ; slopes (ptr high byte)
-	sta ptr_slopes + 1
-	
-	iny                              ; (y = 6)
-	lda (header_ptr), y              ; initial_sample
-	sta last_sample
-	
-	iny                              ; (y = 7)
-	lda (header_ptr), y              ; length
-	sta superblock_length
-	
-	rts
-.endproc

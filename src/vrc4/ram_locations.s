@@ -1,11 +1,10 @@
 
 .segment "ZEROPAGE"
-	.org $00   ; ensure we're at the start of zeropage
-	.res 16    ; temporaries $0..$f
 
 	; ---------------------
 	; SSDPCM decoder
 	; ---------------------
+	
 	idx_superblock:       .res 1  ; index of currently-playing superblock
 	idx_block:            .res 1  ; index of block in superblock
 	idx_pcm_decode:       .res 1  ; index of next sample to be overwritten by the decoder
@@ -20,13 +19,15 @@
 	; ---------------------
 	; Sample playback IRQ
 	; ---------------------
+	
 	tmp_irq_a:            .res 1  ; temporary location for IRQ routine to save the "a" register
 	irq_latch_value:      .res 1  ; value written to the IRQ latch, determines the sample rate
 	
 	; ---------------------
 	; NMI
 	; ---------------------
-	nmi_semaph:        .res 1  ; semaphore for NMI to handle reentrancy
+	
+	nmi_semaph:           .res 1  ; semaphore for NMI to handle reentrancy
 	
 
 .globalzp idx_superblock, idx_block, idx_pcm_decode, idx_pcm_playback
@@ -34,6 +35,17 @@
 .globalzp bits_bank, slopes_bank
 .globalzp tmp_irq_a, irq_latch_value
 .globalzp nmi_semaph
+
+.segment "BSS"
+	; ---------------------
+	; NMI
+	; ---------------------
+	
+	oam_dma_enable:            .res 1  ; enable OAM DMA during NMI (slight drop in sound quality)
+	oam_dma_sample_skip_cnt:   .res 1  ; number of playback samples to skip ahead to compensate
+	;                                  ; for lost sample playback time during OAM DMA
+
+.export oam_dma_enable, oam_dma_sample_skip_cnt
 
 ; ---------------------------------------------
 ; Space reservations for non-allocatable areas
@@ -43,10 +55,8 @@
 	; nothing here yet!
 
 .segment "OAM"
-.org $0200
 	buf_oam: .res 256
 
 .segment "SAMPLE_BUF"
-.org $0300
 .global buf_pcm
 	buf_pcm: .res 256
