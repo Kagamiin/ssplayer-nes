@@ -17,8 +17,8 @@ mapper_dir := vrc4
 #mapper_dir := n163
 
 #decode_routine := ss2_async
-decode_routine := ss2_async_fast
-#decode_routine := ss2_async_fullunroll
+#decode_routine := ss2_async_fast
+decode_routine := ss2_async_fullunroll
 
 dirs := \
 	$(mapper_dir) \

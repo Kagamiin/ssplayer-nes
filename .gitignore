@@ -5,6 +5,7 @@ tools/*.dbg
 tools/*.ogg
 src/.*
 build/**/.*
+build/codegen/*.inc
 build/samples/*
 build/**/*.o
 build/*.*
