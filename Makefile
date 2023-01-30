@@ -9,16 +9,31 @@ SAMPLES_DIR := $(BUILD_DIR)/samples
 
 MAPPER_DIRS := \
 	vrc4 \
+	vrc7 \
 	mmc5 \
 	n163
 
 mapper_dir := vrc4
+#mapper_dir := vrc7
 #mapper_dir := mmc5a
 #mapper_dir := n163
 
 #decode_routine := ss2_async
 #decode_routine := ss2_async_fast
 decode_routine := ss2_async_fullunroll
+
+#samples_subdir := 
+samples_subdir := the-little-things/
+#samples_subdir := bad-apple/
+
+#superblocks_obj := superblocks.o
+superblocks_obj := superblocks_thelittlethings-2par-14093-ss2.o
+#superblocks_file := superblocks_bad-apple-22946-ss2.o
+
+#cfgfile := $(mapper_dir)/ssplayer-64k.cfg
+cfgfile := $(mapper_dir)/ssplayer-128k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-512k.cfg
+
 
 dirs := \
 	$(mapper_dir) \
@@ -30,6 +45,7 @@ obj_subdirs := $(patsubst %,$(BUILD_DIR)/%,$(dirs))
 
 all_mapper_subdirs := $(patsubst %,$(BUILD_DIR)/%,$(MAPPER_DIRS))
 
+
 make_dirs := \
 	$(BUILD_DIR) \
 	$(CODEGEN_DIR) \
@@ -37,7 +53,7 @@ make_dirs := \
 	$(obj_subdirs)
 
 objects := \
-	superblocks.o \
+	$(superblocks_file) \
 	delays.o \
 	nmi.o \
 	main.o \
@@ -52,9 +68,6 @@ includes := \
 	delays.inc \
 	nes_mmio.inc \
 	utils.inc
-
-#cfgfile := $(mapper_dir)/ssplayer-64k.cfg
-cfgfile := $(mapper_dir)/ssplayer-128k.cfg
 
 
 vpath %.o $(BUILD_DIR) $(obj_subdirs)
@@ -71,9 +84,12 @@ ssplayer.nes: $(objects) $(cfgfile)
 	--dbgfile $(BUILD_DIR)/ssplayer.dbg \
 	$(patsubst %,$(BUILD_DIR)/%,$(objects))
 
-superblocks.o: superblocks.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/*.bin
-	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR) --include-dir $(SAMPLES_DIR)
+superblocks.o: superblocks.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/$(samples_subdir)*.bin
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)/$(samples_subdir) --include-dir $(SAMPLES_DIR)/$(samples_subdir)
 
+superblocks_%.o: superblocks_%.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/$(samples_subdir)*.bin
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)/$(samples_subdir) --include-dir $(SAMPLES_DIR)/$(samples_subdir)
+	
 %.o: %.s $(includes)
 	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR)
 
