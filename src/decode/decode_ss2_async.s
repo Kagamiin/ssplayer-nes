@@ -24,8 +24,8 @@
 ; clobbers:
 ;	a, x, y
 ;       zp $0..$4
-.export decode_ss2_async
-.proc decode_ss2_async
+.export decode_async
+.proc decode_async
 
 	.globalzp bits_bank, slopes_bank
 	.globalzp idx_block, idx_pcm_decode, idx_superblock

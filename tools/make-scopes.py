@@ -112,9 +112,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("name_prefix", help="filename prefix for the bin/inc files for the samples")
     parser.add_argument("--subdir", "-d", help="subdirectory inside the samples folder")
-    parser.add_argument("--bank-count", "-c", help="number of available banks", type=int, default=32)
-    parser.add_argument("--bank-size", "--bs", help="size of each bank in bytes", type=int, default=8192)
-    parser.add_argument("--decoder-reserve", "--res", help="bytes of data to reserve for decoder in second-to-last bank", type=int, default=7680)
+    parser.add_argument("--bank-count", "-c", help="number of available banks (default 32)", type=int, default=32)
+    parser.add_argument("--bank-size", "--bs", help="size of each bank in bytes (default 8192)", type=int, default=8192)
+    parser.add_argument("--decoder-reserve", "--dres", help="bytes of data to reserve for decoder in second-to-last bank (default 8192)", type=int, default=8192)
+    parser.add_argument("--main-reserve", "--mres", help="bytes of data to reserve for init/main code in last bank (default 1024)", type=int, default=1024)
     args = parser.parse_args()
 
     build_path = Path(__file__).parent.parent / "build"
@@ -134,6 +135,8 @@ def main():
     allocator = RomBankSet(args.bank_count, args.bank_size)
     allocator.banks[args.bank_count - 2].contents.append(
         Hunk(name = "__decoder_reserve__", size = args.decoder_reserve))
+    allocator.banks[args.bank_count - 1].contents.append(
+        Hunk(name = "__main_reserve__", size = args.main_reserve))
     for name, size in files_by_size:
         allocator.add_hunk(name, size)
 

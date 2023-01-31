@@ -1,7 +1,7 @@
 .include "smc.inc"
 .include "nes_mmio.inc"
 
-.import decode_ss2_async
+.import decode_async
 
 .globalzp idx_pcm_decode, irq_latch_value
 
@@ -76,7 +76,7 @@ SMC_Import idx_smc_pcm_playback
 @fill_buffer:
 	lda #$81
 	sta PPUMASK
-	jsr decode_ss2_async       ; go decode a block
+	jsr decode_async       ; go decode a block
 	
 	lda #$21
 	sta PPUMASK

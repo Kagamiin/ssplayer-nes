@@ -44,7 +44,7 @@
 .proc reset
 .globalzp irq_latch_value
 .import mapper_init, mapper_irq_set_period, mapper_irq_disable, mapper_irq_enable
-.import decode_ss2_async, load_next_superblock
+.import decode_async, load_next_superblock
 .global oam_dma_enable, oam_dma_sample_skip_cnt
 
 	jsr mapper_init
@@ -70,13 +70,13 @@
 
 	jsr load_playback_code       ; copy playback code into RAM
 	jsr load_next_superblock     ; load first superblock
-	jsr decode_ss2_async         ; pre-fill the buffer with some samples
-	jsr decode_ss2_async
-	jsr decode_ss2_async
+	jsr decode_async         ; pre-fill the buffer with some samples
+	jsr decode_async
+	jsr decode_async
 	
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(256 - 127)             ; 127 clock cycles per sample = ~14093 Hz
+	lda #(256 - 78)             ; 127 clock cycles per sample = ~14093 Hz
 	sta irq_latch_value
 	jsr mapper_irq_set_period
 	jsr mapper_irq_enable

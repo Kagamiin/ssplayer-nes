@@ -1,9 +1,8 @@
 .include "smc.inc"
-.include "nes_mmio.inc"
 
 .segment "DECODE"
 
-; Decodes 16 bytes (64 samples) of 2-bit SSDPCM.
+; Decodes 8 bytes (64 samples) of 1-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
 ; uses:
 ;	bits_bank
@@ -23,7 +22,7 @@
 ;	ptr_slopes
 ; clobbers:
 ;	a, x, y
-;       zp $0..$5
+;       zp $0..$2
 .export decode_async
 .proc decode_async
 
@@ -38,10 +37,8 @@
 	.global buf_pcm
 
 	jmp_dst1 = $0
-	jmp_dst2 = $2
-	slope0   = $4
-	slope1   = $5
-
+	slope0   = $2
+	
 .segment "DECODE"
 
 	lda slopes_bank
@@ -50,24 +47,21 @@
 	ldy #$00
 	lda (ptr_slopes), y
 	sta slope0
-	iny                     ; y = 1
-	lda (ptr_slopes), y
-	sta slope1
 	
 	lda bits_bank
 	jsr mapper_set_bank_8000
 	
-	lda #>decode_unroll_1
-	sta jmp_dst1+1
-	lda #>decode_unroll_2
-	sta jmp_dst2+1
-	
-	ldy #$00
 	decode_byte:
 		lda (ptr_bitstream), y              ; load byte in bitstream
+		lsr a                               ; extract upper nibble
+		lsr a
+		lsr a
+		lsr a
 		tax
 		lda decode_byte_jump_tbl1_low, x    ; fetch jump table address to decode this nibble
 		sta jmp_dst1
+		lda decode_byte_jump_tbl1_high, x
+		sta jmp_dst1+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
@@ -77,6 +71,8 @@
 	decode_byte_return_nibble1:
 		inx
 		inx
+		inx
+		inx
 		sta last_sample
 		stx idx_pcm_decode
 		
@@ -84,28 +80,32 @@
 		and #$0f                            ; extract upper nibble
 		tax
 		lda decode_byte_jump_tbl2_low, x    ; fetch jump table address to decode this nibble
-		sta jmp_dst2
+		sta jmp_dst1
+		lda decode_byte_jump_tbl2_high, x   ; fetch jump table address to decode this nibble
+		sta jmp_dst1+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
-		jmp (jmp_dst2)                      ; jump to fetched address
+		jmp (jmp_dst1)                      ; jump to fetched address
 		; --------------------------------- ;
 	
 	decode_byte_return_nibble2:
+		inx
+		inx
 		inx
 		inx
 		sta last_sample
 		stx idx_pcm_decode
 		
 		iny
-		cpy #16
+		cpy #8
 		bne decode_byte
 
 @after:
 	; Bitstream pointer update
 	clc
 	lda ptr_bitstream
-	adc #16
+	adc #8
 	sta ptr_bitstream
 	bcc @nocarry
 	
@@ -128,7 +128,7 @@
 @slope_update:
 	clc
 	lda ptr_slopes                       ; update slope pointer
-	adc #2
+	adc #1
 	sta ptr_slopes
 	bcc @skip
 	
@@ -137,35 +137,27 @@
 @skip:
 	rts
 
-	.macro adc_slope_id    idx
-		adc .ident (.sprintf ("slope%x", (idx)))
-	.endmacro
-
-	.macro sbc_slope_id    idx
-		sbc .ident (.sprintf ("slope%x", (idx)))
-	.endmacro
-
 	.macro decode_internal    code, last_code
 		; To save time, only change carry if last_code has a different sign than code
 		; (or if it's omitted)
 		.ifblank last_code
-			.if code & $02
+			.if code & $01
 				sec
 			.else
 				clc
 			.endif
-		.elseif (code & $02) <> (last_code & $02)
-			.if code & $02
+		.elseif (code & $01) <> (last_code & $01)
+			.if code & $01
 				sec
 			.else
 				clc
 			.endif
 		.endif
 		
-		.if code & $02
-			sbc_slope_id (code & $01)
+		.if code & $01
+			sbc slope0
 		.else
-			adc_slope_id (code & $01)
+			adc slope0
 		.endif
 	.endmacro
 
@@ -179,45 +171,64 @@
 		sta buf_pcm+1, x
 	.endmacro
 
+	.macro decode_code_offs2    code, last_code
+		decode_internal code, last_code
+		sta buf_pcm+2, x
+	.endmacro
+	
+	.macro decode_code_offs3    code, last_code
+		decode_internal code, last_code
+		sta buf_pcm+3, x
+	.endmacro
+	
 	.macro decode_nibble_ret1    nib
 	.ident (.sprintf ("decode_nibble_ret1_%x", nib)):
-		decode_code_offs0 (nib >> 2) & $03,
-		decode_code_offs1 nib & $03,        (nib >> 2) & $03
+		decode_code_offs0 (nib >> 3) & $01,
+		decode_code_offs1 (nib >> 2) & $01, (nib >> 3) & $01
+		decode_code_offs2 (nib >> 1) & $01, (nib >> 2) & $01
+		decode_code_offs3 nib & $01,        (nib >> 1) & $01
 		jmp decode_byte_return_nibble1
 	.endmacro
 	
 	.macro decode_nibble_ret2    nib
 	.ident (.sprintf ("decode_nibble_ret2_%x", nib)):
-		decode_code_offs0 (nib >> 2) & $03,
-		decode_code_offs1 nib & $03,        (nib >> 2) & $03
+		decode_code_offs0 (nib >> 3) & $01,
+		decode_code_offs1 (nib >> 2) & $01, (nib >> 3) & $01
+		decode_code_offs2 (nib >> 1) & $01, (nib >> 2) & $01
+		decode_code_offs3 nib & $01,        (nib >> 1) & $01
 		jmp decode_byte_return_nibble2
 	.endmacro
 
 .segment "DECODE_TABLES"
-	.align 256
 	decode_unroll_1:
 	.repeat 16, nib
 		decode_nibble_ret1 nib
+	.endrepeat
+	
+	decode_unroll_2:
+	.repeat 16, nib
+		decode_nibble_ret2 nib
+	.endrepeat
+
+	decode_byte_jump_tbl1_low:
+	.repeat 16, nib
+		.byte (.lobyte (.ident (.sprintf ("decode_nibble_ret1_%x", nib))))
+	.endrepeat
+
+	decode_byte_jump_tbl1_high:
+	.repeat 16, nib
+		.byte (.hibyte (.ident (.sprintf ("decode_nibble_ret1_%x", nib))))
 	.endrepeat
 
 	decode_byte_jump_tbl2_low:
 	.repeat 16, nib
 		.byte (.lobyte (.ident (.sprintf ("decode_nibble_ret2_%x", nib))))
 	.endrepeat
-	
-	.align 256
-	decode_unroll_2:
-	.repeat 16, nib
-		decode_nibble_ret2 nib
-	.endrepeat
 
-	.align 256
-	decode_byte_jump_tbl1_low:
-	.repeat 256, by
-		.byte (.lobyte (.ident (.sprintf ("decode_nibble_ret1_%x", by >> 4))))
+	decode_byte_jump_tbl2_high:
+	.repeat 16, nib
+		.byte (.hibyte (.ident (.sprintf ("decode_nibble_ret2_%x", nib))))
 	.endrepeat
 	
 	
 .endproc
-
-
