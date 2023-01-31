@@ -18,9 +18,10 @@ mapper_dir := vrc4
 #mapper_dir := mmc5a
 #mapper_dir := n163
 
-#decode_routine := ss1_async
+decode_routine := ss1_async
+#decode_routine := ss1_async_fullunroll
 #decode_routine := ss2_async
-decode_routine := ss2_async_fast
+#decode_routine := ss2_async_fast
 #decode_routine := ss2_async_fullunroll
 
 samples_subdir := 
