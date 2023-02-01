@@ -58,16 +58,17 @@
 		lsr a
 		lsr a
 		tax
-		lda decode_byte_jump_tbl_low, x    ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl1_low, x    ; fetch jump table address to decode this nibble
 		sta jmp_dst1
-		lda decode_byte_jump_tbl_high, x
+		lda decode_byte_jump_tbl1_high, x
 		sta jmp_dst1+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
-		jsr jump_z0_indirect                ; jump to fetched address
+		jmp (jmp_dst1)                      ; jump to fetched address
 		; --------------------------------- ;
-
+	
+	decode_byte_return_nibble1:
 		inx
 		inx
 		inx
@@ -78,16 +79,17 @@
 		lda (ptr_bitstream), y              ; load byte in bitstream
 		and #$0f                            ; extract upper nibble
 		tax
-		lda decode_byte_jump_tbl_low, x    ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl2_low, x    ; fetch jump table address to decode this nibble
 		sta jmp_dst1
-		lda decode_byte_jump_tbl_high, x   ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl2_high, x   ; fetch jump table address to decode this nibble
 		sta jmp_dst1+1
 		
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
-		jsr jump_z0_indirect                ; jump to fetched address
+		jmp (jmp_dst1)                      ; jump to fetched address
 		; --------------------------------- ;
-
+	
+	decode_byte_return_nibble2:
 		inx
 		inx
 		inx
@@ -135,10 +137,6 @@
 @skip:
 	rts
 
-	.proc jump_z0_indirect
-		jmp ($0000)
-	.endproc
-	
 	.macro decode_internal    code, last_code
 		; To save time, only change carry if last_code has a different sign than code
 		; (or if it's omitted)
@@ -183,29 +181,53 @@
 		sta buf_pcm+3, x
 	.endmacro
 	
-	.macro decode_nibble    nib
-	.ident (.sprintf ("decode_nibble_%x", nib)):
+	.macro decode_nibble_ret1    nib
+	.ident (.sprintf ("decode_nibble_ret1_%x", nib)):
 		decode_code_offs0 (nib >> 3) & $01,
 		decode_code_offs1 (nib >> 2) & $01, (nib >> 3) & $01
 		decode_code_offs2 (nib >> 1) & $01, (nib >> 2) & $01
 		decode_code_offs3 nib & $01,        (nib >> 1) & $01
-		rts
+		jmp decode_byte_return_nibble1
+	.endmacro
+	
+	.macro decode_nibble_ret2    nib
+	.ident (.sprintf ("decode_nibble_ret2_%x", nib)):
+		decode_code_offs0 (nib >> 3) & $01,
+		decode_code_offs1 (nib >> 2) & $01, (nib >> 3) & $01
+		decode_code_offs2 (nib >> 1) & $01, (nib >> 2) & $01
+		decode_code_offs3 nib & $01,        (nib >> 1) & $01
+		jmp decode_byte_return_nibble2
 	.endmacro
 
 .segment "DECODE_TABLES"
 	decode_unroll_1:
 	.repeat 16, nib
-		decode_nibble nib
+		decode_nibble_ret1 nib
+	.endrepeat
+	
+	decode_unroll_2:
+	.repeat 16, nib
+		decode_nibble_ret2 nib
 	.endrepeat
 
-	decode_byte_jump_tbl_low:
+	decode_byte_jump_tbl1_low:
 	.repeat 16, nib
-		.byte (.lobyte (.ident (.sprintf ("decode_nibble_%x", nib))))
+		.byte (.lobyte (.ident (.sprintf ("decode_nibble_ret1_%x", nib))))
 	.endrepeat
 
-	decode_byte_jump_tbl_high:
+	decode_byte_jump_tbl1_high:
 	.repeat 16, nib
-		.byte (.hibyte (.ident (.sprintf ("decode_nibble_%x", nib))))
+		.byte (.hibyte (.ident (.sprintf ("decode_nibble_ret1_%x", nib))))
+	.endrepeat
+
+	decode_byte_jump_tbl2_low:
+	.repeat 16, nib
+		.byte (.lobyte (.ident (.sprintf ("decode_nibble_ret2_%x", nib))))
+	.endrepeat
+
+	decode_byte_jump_tbl2_high:
+	.repeat 16, nib
+		.byte (.hibyte (.ident (.sprintf ("decode_nibble_ret2_%x", nib))))
 	.endrepeat
 	
 	

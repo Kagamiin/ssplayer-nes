@@ -54,10 +54,11 @@
 	decode_byte:
 		lda (ptr_bitstream), y              ; load byte in bitstream
 		tax
-		bmi @neg_set
+		bmi @neg_set                        ; check MSB to choose code path to decode it, since
+		;                                   ; the unrolled code only decodes the bottom 7 bits
 		
 	@neg_clear:
-		lda decode_byte_jump_tbl_low, x    ; fetch jump table address to decode this nibble
+		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this nibble
 		sta jmp_dst1
 		lda decode_byte_jump_tbl_high, x
 		sta jmp_dst1+1
@@ -65,7 +66,7 @@
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
 		clc
-		adc slope0
+		adc slope0                          ; decode MSB
 		sta buf_pcm, x
 		jmp (jmp_dst1)                      ; jump to fetched address
 		; --------------------------------- ;
@@ -79,7 +80,7 @@
 		lda last_sample                     ; load temporary regs
 		ldx idx_pcm_decode
 		sec
-		sbc slope0
+		sbc slope0                          ; decode MSB
 		sta buf_pcm, x
 		jmp (jmp_dst1)                      ; jump to fetched address
 		; --------------------------------- ;

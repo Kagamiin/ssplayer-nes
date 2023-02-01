@@ -1,3 +1,35 @@
+# -------------------------------------------------------------
+# Configuration variables
+
+mapper_dir := vrc4
+#mapper_dir := vrc7
+#mapper_dir := mmc5a
+#mapper_dir := n163
+
+#decode_routine := ss1_async
+#decode_routine := ss1_async_fast
+#decode_routine := ss1_async_fullunroll
+#decode_routine := ss2_async
+decode_routine := ss2_async_fast
+#decode_routine := ss2_async_fullunroll
+
+samples_subdir := 
+#samples_subdir := the-little-things/
+#samples_subdir := bad-apple/
+#samples_subdir := bad-apple-ss1/
+
+superblocks_file := superblocks.o
+#superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
+#superblocks_file := superblocks_bad-apple-22946-ss2.o
+#superblocks_file := superblocks_bad-apple-22946-ss1.o
+
+#cfgfile := $(mapper_dir)/ssplayer-64k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-128k.cfg
+cfgfile := $(mapper_dir)/ssplayer-256k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-512k.cfg
+
+# -------------------------------------------------------------
+
 CA65 := ca65
 LD65 := ld65
 SRC_DIR := ./src
@@ -12,32 +44,6 @@ MAPPER_DIRS := \
 	vrc7 \
 	mmc5 \
 	n163
-
-mapper_dir := vrc4
-#mapper_dir := vrc7
-#mapper_dir := mmc5a
-#mapper_dir := n163
-
-decode_routine := ss1_async
-#decode_routine := ss1_async_fullunroll
-#decode_routine := ss2_async
-#decode_routine := ss2_async_fast
-#decode_routine := ss2_async_fullunroll
-
-samples_subdir := 
-#samples_subdir := the-little-things/
-#samples_subdir := bad-apple/
-#samples_subdir := bad-apple-ss1/
-
-superblocks_file := superblocks.o
-#superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
-#superblocks_file := superblocks_bad-apple-22946-ss2.o
-#superblocks_file := superblocks_bad-apple-22946-ss1.o
-
-#cfgfile := $(mapper_dir)/ssplayer-64k.cfg
-cfgfile := $(mapper_dir)/ssplayer-128k.cfg
-#cfgfile := $(mapper_dir)/ssplayer-256k.cfg
-#cfgfile := $(mapper_dir)/ssplayer-512k.cfg
 
 
 dirs := \
