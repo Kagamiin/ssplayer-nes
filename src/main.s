@@ -18,7 +18,13 @@
 
 ; ---------------------------------------------------------------------------
 .proc main_loop
+.globalzp nmi_triggered
+.import vblank
+	lda nmi_triggered
+	beq main_loop
+	jsr vblank
 	jmp main_loop
+
 .endproc
 
 ; ---------------------------------------------------------------------------
@@ -76,7 +82,7 @@
 	
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(256 - 78)             ; 127 clock cycles per sample = ~14093 Hz
+	lda #(256 - 127)             ; 127 clock cycles per sample = ~14093 Hz
 	sta irq_latch_value
 	jsr mapper_irq_set_period
 	jsr mapper_irq_enable

@@ -33,6 +33,8 @@ All 3 of these routines are made to work with the **2-bit SSDPCM** format. Their
 | ss2_async_fast                | 79-106 rasterlines    | 1280 bytes  |
 | ss2_async                     | 103-136 rasterlines   | 725 bytes   |
 
+**NOTE:** Decode time measured with the Konami VRC mappers. Decode time will be larger for other mappers due to higher IRQ overhead.
+
 ### 1-bit SSDPCM
 
 All 3 of these routines are made to work with the **1-bit SSDPCM** format. Their specifications are as follows:
@@ -42,6 +44,8 @@ All 3 of these routines are made to work with the **1-bit SSDPCM** format. Their
 | ss1_async_fullunroll          | 45-61 rasterlines     | 6400 bytes  |
 | ss1_async_fast                | 63-84 rasterlines     | 1376 bytes  |
 | ss1_async                     | 68-91 rasterlines     | 919 bytes   |
+
+**NOTE:** Decode time measured with the Konami VRC mappers. Decode time will be larger for other mappers due to higher IRQ overhead.
 
 ### Future plans for more decompression routines
 

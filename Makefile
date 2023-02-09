@@ -5,6 +5,7 @@ mapper_dir := vrc4
 #mapper_dir := vrc7
 #mapper_dir := mmc5a
 #mapper_dir := n163
+#mapper_dir := fme-7
 
 #decode_routine := ss1_async
 #decode_routine := ss1_async_fast
@@ -43,7 +44,8 @@ MAPPER_DIRS := \
 	vrc4 \
 	vrc7 \
 	mmc5 \
-	n163
+	n163 \
+	fme-7
 
 
 dirs := \

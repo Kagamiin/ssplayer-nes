@@ -21,19 +21,20 @@
 	; ---------------------
 	
 	tmp_irq_a:            .res 1  ; temporary location for IRQ routine to save the "a" register
-	irq_latch_value:      .res 1  ; value written to the IRQ latch, determines the sample rate
+	irq_latch_value:      .res 1  ; determines the sample rate
+	irq_period_holder:    .res 1  ; MMC5 requires the IRQ period to be written on every retrigg
 	
 	; ---------------------
 	; NMI
 	; ---------------------
 	
-	nmi_triggered:        .res 1  ; semaphore for NMI to handle reentrancy
+	nmi_triggered:        .res 1  ; set when NMI is triggered
 	
 
 .globalzp idx_superblock, idx_block, idx_pcm_decode, idx_pcm_playback
 .globalzp ptr_bitstream, ptr_slopes, superblock_length, last_sample
 .globalzp bits_bank, slopes_bank
-.globalzp tmp_irq_a, irq_latch_value
+.globalzp tmp_irq_a, irq_latch_value, irq_period_holder
 .globalzp nmi_triggered
 
 .segment "BSS"

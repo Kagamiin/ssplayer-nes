@@ -8,27 +8,20 @@
 ; ---------------------------------------------------------------------------
 .export nmi
 .proc nmi
-.globalzp nmi_semaph, irq_latch_value
+.globalzp nmi_triggered
+	inc nmi_triggered
+	rti
+
+.endproc
+
+; ---------------------------------------------------------------------------
+.export vblank
+.proc vblank
+.globalzp nmi_triggered
 .global oam_dma_enable, oam_dma_sample_skip_cnt
 .import fill_buffer
 
 SMC_Import idx_smc_pcm_playback
-
-	pha
-	
-	lda nmi_semaph                 ; check NMI semaphore
-	beq @continue
-	
-	pla
-	rti                            ; reentrant call, bail out
-	
-@continue:
-	inc nmi_semaph                 ; take NMI semaphore
-	
-	txa
-	pha
-	tya
-	pha
 
 	lda oam_dma_enable
 	beq @after_oam_dma
@@ -47,14 +40,7 @@ SMC_Import idx_smc_pcm_playback
 	jsr delay_1536                 ; wait approximately until the start of the frame
 	jsr fill_buffer                ; fill PCM buffer here
 	
-	lda #0
-	sta nmi_semaph                 ; release NMI semaphore
-	
-	pla
-	tay
-	pla
-	tax
-	
-	pla
-	rti
+	lda #$00
+	sta nmi_triggered
+	rts
 .endproc

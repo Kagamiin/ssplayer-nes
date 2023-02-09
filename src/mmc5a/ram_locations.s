@@ -28,14 +28,14 @@
 	; NMI
 	; ---------------------
 	
-	nmi_semaph:           .res 1  ; semaphore for NMI to handle reentrancy
+	nmi_triggered:        .res 1  ; semaphore for NMI to handle reentrancy
 	
 
 .globalzp idx_superblock, idx_block, idx_pcm_decode, idx_pcm_playback
 .globalzp ptr_bitstream, ptr_slopes, superblock_length, last_sample
 .globalzp bits_bank, slopes_bank
 .globalzp tmp_irq_a, irq_latch_value, irq_period_holder
-.globalzp nmi_semaph
+.globalzp nmi_triggered
 
 .segment "BSS"
 	; ---------------------
