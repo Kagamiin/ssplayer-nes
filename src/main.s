@@ -20,9 +20,11 @@
 .proc main_loop
 .globalzp nmi_triggered
 .import vblank
+.import copy_screen
 	lda nmi_triggered
 	beq main_loop
 	jsr vblank
+	jsr copy_screen
 	jmp main_loop
 
 .endproc
@@ -52,6 +54,7 @@
 .import mapper_init, mapper_irq_set_period, mapper_irq_disable, mapper_irq_enable
 .import decode_async, load_next_superblock
 .global oam_dma_enable, oam_dma_sample_skip_cnt
+.global ppuctrl_shadow, ppumask_shadow, buf_vram_write
 
 	jsr mapper_init
 	ldx #$ff
@@ -92,8 +95,16 @@
 	sta oam_dma_sample_skip_cnt  ; setup flags to enable OAM DMA
 	sta oam_dma_enable
 	
-	lda #$88
+	lda #$ff
+	sta buf_vram_write           ; put terminator in VRAM write buffer
+	
+	lda #%00001010
+	sta PPUMASK                  ; setup PPUMASK, enable background rendering
+	sta ppumask_shadow
+	
+	lda #%10001000
 	sta PPUCTRL                  ; setup PPUCTRL, enable NMI
+	sta ppuctrl_shadow
 	
 	jmp main_loop
 .endproc

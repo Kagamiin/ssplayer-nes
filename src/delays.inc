@@ -1,5 +1,5 @@
 .ifndef DELAYS_INC
-.define DELAYS_INC 1
+DELAYS_INC = 1
 
 .import delay_frame
 .import delay_24576, delay_12288, delay_6144, delay_3072

@@ -20,6 +20,8 @@
 .globalzp nmi_triggered
 .global oam_dma_enable, oam_dma_sample_skip_cnt
 .import fill_buffer
+.import write_palettes
+.import vram_copy_stripes
 
 SMC_Import idx_smc_pcm_playback
 
@@ -37,7 +39,14 @@ SMC_Import idx_smc_pcm_playback
 @after_oam_dma:
 	cli                            ; enable interrupts, so samples can be played
 	
-	jsr delay_1536                 ; wait approximately until the start of the frame
+	jsr write_palettes
+	
+	jsr vram_copy_stripes
+	lda PPUSTATUS
+	lda #$00
+	sta PPUSCROLL
+	sta PPUSCROLL
+	;jsr delay_1536                 ; wait approximately until the start of the frame
 	jsr fill_buffer                ; fill PCM buffer here
 	
 	lda #$00

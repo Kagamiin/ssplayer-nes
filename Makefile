@@ -11,22 +11,22 @@ mapper_dir := vrc4
 #decode_routine := ss1_async_fast
 #decode_routine := ss1_async_fullunroll
 #decode_routine := ss2_async
-decode_routine := ss2_async_fast
-#decode_routine := ss2_async_fullunroll
+#decode_routine := ss2_async_fast
+decode_routine := ss2_async_fullunroll
 
-samples_subdir := 
-#samples_subdir := the-little-things/
+#samples_subdir := 
+samples_subdir := the-little-things/
 #samples_subdir := bad-apple/
 #samples_subdir := bad-apple-ss1/
 
-superblocks_file := superblocks.o
-#superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
+#superblocks_file := superblocks.o
+superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
 #superblocks_file := superblocks_bad-apple-22946-ss2.o
 #superblocks_file := superblocks_bad-apple-22946-ss1.o
 
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
-#cfgfile := $(mapper_dir)/ssplayer-128k.cfg
-cfgfile := $(mapper_dir)/ssplayer-256k.cfg
+cfgfile := $(mapper_dir)/ssplayer-128k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-256k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-512k.cfg
 
 # -------------------------------------------------------------
@@ -35,6 +35,7 @@ CA65 := ca65
 LD65 := ld65
 SRC_DIR := ./src
 BUILD_DIR := ./build
+ASSETS_DIR := ./assets
 CODEGEN_DIR := $(BUILD_DIR)/codegen
 SAMPLES_DIR := $(BUILD_DIR)/samples
 
@@ -70,6 +71,9 @@ objects := \
 	delays.o \
 	nmi.o \
 	main.o \
+	graphics.o \
+	ppu_stripe.o \
+	ram_locations_common.o \
 	decode/buffer.o \
 	decode/decode_$(decode_routine).o \
 	decode/superblock_load.o \
@@ -104,7 +108,7 @@ superblocks_%.o: superblocks_%.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/$(s
 	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)/$(samples_subdir) --include-dir $(SAMPLES_DIR)/$(samples_subdir)
 	
 %.o: %.s $(includes)
-	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR)
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR) --bin-include-dir $(ASSETS_DIR)
 
 build_dirs:
 	@mkdir -p $(make_dirs) 2>/dev/null

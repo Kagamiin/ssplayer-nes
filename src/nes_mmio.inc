@@ -1,5 +1,5 @@
 .ifndef MMIO_INC
-.define MMIO_INC 1
+MMIO_INC = 1
 
 PPUCTRL    = $2000
 PPUMASK    = $2001

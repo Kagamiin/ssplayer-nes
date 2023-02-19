@@ -6,6 +6,30 @@
 	lda #$00
 	sta $f002             ; disable IRQ
 	sta $9002             ; clear PRG swap bit, disable SRAM access
+	lda #$00              ; initialize CHR bank registers
+	sta $b000
+	sta $b001
+	sta $b003
+	sta $c001
+	sta $c003
+	sta $d001
+	sta $d003
+	sta $e001
+	sta $e003
+	lda #$01
+	sta $b002
+	lda #$02
+	sta $c000
+	lda #$03
+	sta $c002
+	lda #$04
+	sta $d000
+	lda #$05
+	sta $d002
+	lda #$06
+	sta $e000
+	lda #$07
+	sta $e002
 	rts
 .endproc
 

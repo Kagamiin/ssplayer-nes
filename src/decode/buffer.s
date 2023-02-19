@@ -11,6 +11,7 @@
 .export fill_buffer
 .proc fill_buffer
 
+.global ppumask_shadow
 
 SMC_Import idx_smc_pcm_playback
 
@@ -18,7 +19,8 @@ SMC_Import idx_smc_pcm_playback
 	playback_offset = $9
 	tmp_playback_pos = $a
 
-	lda #$21
+	lda ppumask_shadow
+	ora #$21
 	sta PPUMASK
 	
 	SMC_LoadLowByte idx_smc_pcm_playback, a
@@ -68,17 +70,19 @@ SMC_Import idx_smc_pcm_playback
 	sbc playback_offset       ; are there enough samples in the buffer to last
 	;                         ; until the next iteration?
 	bcs @buffer_check
-	
-	lda #$00
+
+	lda ppumask_shadow
 	sta PPUMASK
 	rts
 	
 @fill_buffer:
-	lda #$81
+	lda ppumask_shadow
+	ora #$81
 	sta PPUMASK
 	jsr decode_async       ; go decode a block
 	
-	lda #$21
+	lda ppumask_shadow
+	ora #$21
 	sta PPUMASK
 	lda tmp_playback_pos
 	sec
