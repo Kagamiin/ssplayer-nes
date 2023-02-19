@@ -1,0 +1,12 @@
+wav/*
+tools/*65
+tools/*.nes
+tools/*.dbg
+tools/*.ogg
+src/.*
+build/**/.*
+build/codegen/*.inc
+build/codegen/*.s
+build/samples/*
+build/**/*.o
+build/*.*
