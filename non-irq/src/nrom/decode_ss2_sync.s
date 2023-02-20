@@ -182,6 +182,7 @@ after:
 	cmp idx_block                        ;  3  ..  30  check if we need to load the next superblock
 	bne slope_update                     ;  3  ..  33
         ;                                    ; -1  ..  32
+        inc idx_superblock                   ;  5
 	jmp load_next_superblock             ;  3  ..   3  load next superblock
 
 slope_update:                                ;     ..  33

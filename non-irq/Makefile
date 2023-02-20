@@ -1,14 +1,17 @@
 # -------------------------------------------------------------
 # Configuration variables
 
+#mapper_dir := nrom
 mapper_dir := uxrom
 
 #decode_routine := ss1_sync
 decode_routine := ss2_sync
 
+#samples_subdir := cuba-baion-32k/
 #samples_subdir := cuba-baion-ss1/
 samples_subdir := cuba-baion/
 
+#superblocks_file := superblocks_cuba-baion-14093-ss1.o
 #superblocks_file := superblocks_cuba-baion-19454-ss1.o
 superblocks_file := superblocks_cuba-baion-19454-ss2.o
 

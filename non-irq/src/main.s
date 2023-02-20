@@ -57,7 +57,8 @@
 	jsr load_next_superblock     ; load first superblock
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(92 - 57) / 5           ; 127 clock cycles per sample = ~14093 Hz
+	;lda #(92 - 57) / 5           ; 127 clock cycles per sample = ~14093 Hz
+	lda #(127 - 57) / 5           ; 127 clock cycles per sample = ~14093 Hz
 	sta playback_delay_count
 	
 	lda #$ff
