@@ -35,7 +35,8 @@ SAMPLES_DIR := $(BUILD_DIR)/samples
 .PHONY: build_dirs all clean
 
 MAPPER_DIRS := \
-	uxrom
+	uxrom \
+	nrom \
 
 
 dirs := \

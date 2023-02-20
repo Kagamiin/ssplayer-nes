@@ -1,5 +1,7 @@
 .include "smc.inc"
 .include "nes_mmio.inc"
+.include "checked_branches.inc"
+.include "play_sample.inc"
 
 .segment "DECODE"
 
@@ -51,65 +53,17 @@
 		sta bank_numbers, y  ; 5  7
 	.endmacro
 
-	.macro play_sample_1
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_1:
-			sbc #1             ;  2
-			bne @delay_loop_1  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_1           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
-	.macro play_sample_2
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_2:
-			sbc #1             ;  2
-			bne @delay_loop_2  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_2           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
 	.macro play_sample_2_minus3
 		lda playback_delay_count   ;  3  3
 		sec                        ;  2  5
 		sbc #1                     ;  2  7
 		@delay_loop_2:
-			sbc #1             ;  2
-			bne @delay_loop_2  ;  3
+			sbc #1              ;  2
+			c_bne @delay_loop_2 ;  3
 		;                          ; -6  1 + 5n
 
 		lda tmp_sample_2           ;  3  4 + 5n
 		sta $4011                  ;  4  8 + 5n
-	.endmacro
-
-	.macro play_sample_3
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_3:
-			sbc #1             ;  2
-			bne @delay_loop_3  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_3           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
-	.macro play_sample_4
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_4:
-			sbc #1             ;  2
-			bne @delay_loop_4  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_4           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
 	.endmacro
 	
 .segment "DECODE"
@@ -134,7 +88,7 @@ load_slopes:                      ;     10
 		ldx #6                              ;  2  11
 		@delay_loop:
 			dex                         ;  2
-			bne @delay_loop             ;  3
+			c_bne @delay_loop           ;  3
 			;                           ; 29  40
 		nop                                 ;  2  42
 		nop                                 ;  2  44
@@ -144,7 +98,7 @@ load_slopes:                      ;     10
 		ldx #9                              ;  2   2
 		@delay_loop_:
 			dex                         ;  2
-			bne @delay_loop_            ;  3
+			c_bne @delay_loop_          ;  3
 			;                           ; 44  46
 	decode_byte_entry:
 		play_sample_3                       ;     57 + 5n
@@ -159,7 +113,7 @@ load_slopes:                      ;     10
 		ldx #4                              ;  2  23
 		@delay_loop:
 			dex                         ;  2
-			bne @delay_loop             ;  3
+			c_bne @delay_loop           ;  3
 			;                           ; 19  42
 		nop                                 ;  2  44
 		nop                                 ;  2  46
@@ -183,7 +137,7 @@ load_slopes:                      ;     10
 		ldx #4                              ;  2  25
 		@delay_loop:
 			dex                         ;  2
-			bne @delay_loop             ;  3
+			c_bne @delay_loop           ;  3
 			;                           ; 19  44
 		nop                                 ;  2  46
 		play_sample_2                       ;     57 + 5n
@@ -191,14 +145,14 @@ load_slopes:                      ;     10
 		ldx #9                              ;  2   2
 		@delay_loop_:
 			dex                         ;  2
-			bne @delay_loop_            ;  3
+			c_bne @delay_loop_          ;  3
 			;                           ; 44  46
 		play_sample_3                       ;     57 + 5n
 		
 		ldx #9                              ;  2   2
 		@delay_loop__:
 			dex                         ;  2
-			bne @delay_loop__           ;  3
+			c_bne @delay_loop__         ;  3
 			;                           ; 44  46
 		play_sample_4                       ;     57 + 5n
 		
@@ -212,7 +166,7 @@ load_slopes:                      ;     10
 		
 		iny                                 ;  2   2
 		cpy #16                             ;  2   4
-		beq after                           ;  3   7
+		c_beq after                         ;  3   7
 		;                                   ; -1   6
 		jmp decode_byte_preamble            ;  3   9
 
@@ -222,7 +176,7 @@ after:
 	lda ptr_bitstream                    ;  3  12
 	adc #16                              ;  2  14
 	sta ptr_bitstream                    ;  3  17
-	bcc @nocarry                         ;  3  ..  20
+	c_bcc @nocarry                       ;  3  ..  20
 	;                                    ; -1  19  ..
 	inc ptr_bitstream + 1                ;  5  24  ..
 	jmp carry_ptr_bitstream              ;  3  27  ..
@@ -231,7 +185,7 @@ after:
 	inc idx_block                        ;  5  ..  25
 	lda superblock_length                ;  3  ..  28
 	cmp idx_block                        ;  3  ..  31  check if we need to load the next superblock
-	bne slope_update                     ;  3  ..  ..  34
+	c_bne slope_update                   ;  3  ..  ..  34
         ;                                    ; -1  ..  33  ..
 	inc idx_superblock                   ;  5  ..  38  ..
 	nop                                  ;  2  ..  40  ..
@@ -243,7 +197,7 @@ after:
 
 slope_update:                                ;     ..  ..  34
 	inc ptr_slopes                       ;  5  ..  ..  39
-	bne nocarry_slope                    ;  3  ..  ..  42   ..
+	c_bne nocarry_slope                  ;  3  ..  ..  42   ..
 	;                                    ; -1  ..  ..       41
 	inc $0                               ;  5  ..  ..       46  dummy
 	play_sample_2                        ;                  57 + 5n
@@ -262,7 +216,7 @@ carry_ptr_bitstream:                         ;     27
 	inc idx_block                        ;  5  32
 	lda superblock_length                ;  3  35
 	cmp idx_block                        ;  3  38  check if we need to load the next superblock
-	bne slope_update_2                   ;  3  41
+	c_bne slope_update_2                 ;  3  41
         ;                                    ; -1  40
 	inc idx_superblock                   ;  5  45
 	play_sample_2                        ;     56 + 5n
@@ -270,7 +224,7 @@ carry_ptr_bitstream:                         ;     27
 
 slope_update_2:                              ;     41
 	inc ptr_slopes                       ;  5  46
-	bne nocarry_slopes_2                 ;  3  49       ..
+	c_bne nocarry_slopes_2               ;  3  49       ..
 	;                                    ; -1  ..       48
 	play_sample_2_minus3                 ;              56 + 5n
 	inc ptr_slopes + 1                   ;  5  ..        4

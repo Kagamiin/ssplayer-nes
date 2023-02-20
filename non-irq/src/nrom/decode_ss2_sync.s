@@ -1,5 +1,7 @@
 .include "smc.inc"
 .include "nes_mmio.inc"
+.include "checked_branches.inc"
+.include "play_sample.inc"
 
 .segment "DECODE"
 
@@ -47,54 +49,6 @@
 	tmp_sample_2 = $7
 	tmp_sample_3 = $8
 	tmp_sample_4 = $9
-
-	.macro play_sample_1
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_1:
-			sbc #1             ;  2
-			bne @delay_loop_1  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_1           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
-	.macro play_sample_2
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_2:
-			sbc #1             ;  2
-			bne @delay_loop_2  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_2           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
-	.macro play_sample_3
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_3:
-			sbc #1             ;  2
-			bne @delay_loop_3  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_3           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
-
-	.macro play_sample_4
-		lda playback_delay_count   ;  3  3
-		sec                        ;  2  5
-		@delay_loop_4:
-			sbc #1             ;  2
-			bne @delay_loop_4  ;  3
-		;                          ; -1  4 + 5n
-
-		lda tmp_sample_4           ;  3  7 + 5n
-		sta $4011                  ;  4 11 + 5n
-	.endmacro
 	
 .segment "DECODE"
 
@@ -120,7 +74,7 @@ load_slopes:                      ;     21
 		ldx #7                              ;  2   9
 		@delay_loop:
 			dex                         ;  2
-			bne @delay_loop             ;  3
+			c_bne @delay_loop           ;  3
 			;                           ; 34  43
 		ldx $00                             ;  3  46  dummy
 		play_sample_3                       ;     57 + 5n
@@ -128,7 +82,7 @@ load_slopes:                      ;     21
 		ldx #9                              ;  2   2
 		@delay_loop_:
 			dex                         ;  2
-			bne @delay_loop_            ;  3
+			c_bne @delay_loop_          ;  3
 			;                           ; 44  46
 	decode_byte_entry:
 		play_sample_4                       ;     57 + 5n
@@ -164,7 +118,7 @@ load_slopes:                      ;     21
 		
 		iny                                 ;  2   2
 		cpy #32                             ;  2   4
-		bne decode_byte_preamble            ;  3   7
+		c_bne decode_byte_preamble          ;  3   7
 
 after:
 	; Bitstream pointer update           ; -1   6
@@ -172,7 +126,7 @@ after:
 	lda ptr_bitstream                    ;  3  11
 	adc #32                              ;  2  13
 	sta ptr_bitstream                    ;  3  16
-	bcc @nocarry                         ;  3  ..  19
+	c_bcc @nocarry                       ;  3  ..  19
 	;                                    ; -1  18  ..
 	inc ptr_bitstream + 1                ;  5  23  ..
 
@@ -180,7 +134,7 @@ after:
 	inc idx_block                        ;  5  ..  24
 	lda superblock_length                ;  3  ..  27
 	cmp idx_block                        ;  3  ..  30  check if we need to load the next superblock
-	bne slope_update                     ;  3  ..  33
+	c_bne slope_update                   ;  3  ..  33
         ;                                    ; -1  ..  32
         inc idx_superblock                   ;  5
 	jmp load_next_superblock             ;  3  ..   3  load next superblock
@@ -190,7 +144,7 @@ slope_update:                                ;     ..  33
 	lda ptr_slopes                       ;  3  ..  38  update slope pointer
 	adc #2                               ;  2  ..  40
 	sta ptr_slopes                       ;  3  ..  43
-	bcc @nocarry                         ;  3  ..  46       ..
+	c_bcc @nocarry                       ;  3  ..  46       ..
 	;                                    ; -1  ..  ..       45
 	inc ptr_slopes + 1                   ;  5  ..  ..       50
 
@@ -200,7 +154,7 @@ slope_update:                                ;     ..  33
 	ldx #3                               ;  2  ..   2        6
 	@delay_loop_:
 		dex                          ;  2
-		bne @delay_loop_             ;  3
+		c_bne @delay_loop_           ;  3
 		;                            ; 14      16       20
 	nop                                  ;  2      18       22
 	jmp load_slopes                      ;  3      21    -- 25
