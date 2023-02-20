@@ -4,68 +4,41 @@ Sample player for **NES** using **SSDPCM** codec (originally designed by "Algori
 
 ## Features
 
-- Cycle-based **IRQ-driven** playback
-- **Buffered decompression** driven by NMI for **easy integration** into games and demos
+- Support for mappers with **cycle-based IRQ**
+  - Runs in the background, leaving free CPU time for your application
+  - OAM DMA and PPU uploads are supported, with minimal audio quality degradation
+  - **Buffered decompression** driven by NMI for **easy integration** into games and demos
   - 256-byte buffer - fits all sample rates
   - Automatic predictive buffer filling - fills buffer with as many samples as needed for an entire frame
-- **Variable sample rates**
-  - 2-bit - up to 23.2 KHz
-  - 1-bit - up to 26.3 KHz
-  - Even higher sample rates possible via decompression without NMI-based buffering _(TODO: test how high it can go)_
+- Support for simpler mappers **without IRQ**
+  - Trigger one-shot samples at any time
+  - No RAM buffer required
+  - NMI handler can be used for concurrent code execution (with some audio quality degradation)
 - **SSDPCM** compression ratio of roughly 1:4 (2.13 bit/sample)
   - 1:8 compression ratio (1.06 bit/sample) also possible, with quality way superior to standard NES **DPCM**
-- **NTSC** support only (for now)
-  - **Dendy** support can be easily added with some hacking, but **PAL** support might need a different prediction table _(TODO verify)_
-
-## Decompression routines
-
-A few versions of the decompression routine are included. They provide various tradeoffs between code size and speed, as well as quality.
-
-Note that for the code sizes listed, a further 192 bytes can be shaved off of these sizes by not including the entire prediction table for the buffer filling routine, if only a few known sample rates are going to be used.
-
-### 2-bit SSDPCM
-
-All 3 of these routines are made to work with the **2-bit SSDPCM** format. Their specifications are as follows:
-
-| Name                          | Decode time @ ~14 KHz | Code size   |
-|:------------------------------|:---------------------:|------------:|
-| ss2_async_fullunroll          | 61-82 rasterlines     | 7680 bytes  |
-| ss2_async_fast                | 79-106 rasterlines    | 1280 bytes  |
-| ss2_async                     | 103-136 rasterlines   | 725 bytes   |
-
-**NOTE:** Decode time measured with the Konami VRC mappers. Decode time will be larger for other mappers due to higher IRQ overhead.
-
-### 1-bit SSDPCM
-
-All 3 of these routines are made to work with the **1-bit SSDPCM** format. Their specifications are as follows:
-
-| Name                          | Decode time @ ~14 KHz | Code size   |
-|:------------------------------|:---------------------:|------------:|
-| ss1_async_fullunroll          | 45-61 rasterlines     | 6400 bytes  |
-| ss1_async_fast                | 63-84 rasterlines     | 1376 bytes  |
-| ss1_async                     | 68-91 rasterlines     | 919 bytes   |
-
-**NOTE:** Decode time measured with the Konami VRC mappers. Decode time will be larger for other mappers due to higher IRQ overhead.
-
-### Future plans for more decompression routines
-
-A hybrid format is planned that contains both 1-bit and 2-bit sample blocks to provide finer granularity in bitrate control.
-
-I don't know if I'll explore other SSDPCM variants by Algorithm (such as SSDPCM1-Super and VF-SSDPCM1).
 
 ## Supported mappers
 
-Currently the following mappers are supported in the code (and selectable inside the makefile):
+Currently the following mappers are supported:
 
-- **Konami VRC4** (easily portable to **VRC6**/**VRC7**)
+### IRQ-driven version
+
+- **Konami VRC4**
+- **Konami VRC7**
 - **Nintendo MMC5A***
 - **Namco 163**
+- **Sunsoft FME-7** (also Sunsoft 5B/5A)
 
 _*Emulation of MMC5A-exclusive features is currently not supported in any emulator to date._
 
-Support for more mappers might be added in the future. If you wish for me to add support to a specific mapper, please open an issue - though the included mapper implementations should provide a good basis for porting to other mappers on your own.
-
 Note that among all available mappers with support for cycle IRQs, the **Konami VRC** ones are considered ideal due to their capability of automatically retriggering the IRQ without any input from the CPU, which minimizes sample rate jitter and eliminates sample rate oscillation.
+
+### Non-IRQ-driven version
+
+- **NROM**
+- **UxROM** (UNROM/UOROM/UNROM-512 etc.)
+
+Support for more mappers might be added in the future. If you wish for me to add support to a specific mapper, please open an issue - though the included mapper implementations should provide a good basis for porting to other mappers on your own.
 
 ### Scanline-based mapper support
 
