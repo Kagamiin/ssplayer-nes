@@ -12,6 +12,7 @@ samples_subdir := cuba-baion/
 #superblocks_file := superblocks_cuba-baion-19454-ss1.o
 superblocks_file := superblocks_cuba-baion-19454-ss2.o
 
+#cfgfile := $(mapper_dir)/ssplayer-32k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
 cfgfile := $(mapper_dir)/ssplayer-128k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-256k.cfg
