@@ -3,19 +3,14 @@
 
 mapper_dir := uxrom
 
+#decode_routine := ss1_sync
 decode_routine := ss2_sync
 
-#samples_subdir := 
-#samples_subdir := the-little-things/
+#samples_subdir := cuba-baion-ss1/
 samples_subdir := cuba-baion/
-#samples_subdir := bad-apple/
-#samples_subdir := bad-apple-ss1/
 
-#superblocks_file := superblocks.o
-#superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
+#superblocks_file := superblocks_cuba-baion-19454-ss1.o
 superblocks_file := superblocks_cuba-baion-19454-ss2.o
-#superblocks_file := superblocks_bad-apple-22946-ss2.o
-#superblocks_file := superblocks_bad-apple-22946-ss1.o
 
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
 cfgfile := $(mapper_dir)/ssplayer-128k.cfg
