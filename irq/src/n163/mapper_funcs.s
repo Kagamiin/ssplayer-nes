@@ -12,6 +12,23 @@
 	sta $5800
 	lda #$ff
 	sta $5000             ; initialize IRQ timer to stable state
+	
+	lda #$00
+	sta $8000             ; map CHR banks linearly
+	lda #$01
+	sta $8800
+	lda #$02
+	sta $9000
+	lda #$03
+	sta $9800
+	lda #$04
+	sta $a000
+	lda #$05
+	sta $a800
+	lda #$06
+	sta $b000
+	lda #$07
+	sta $b800
 	rts
 .endproc
 

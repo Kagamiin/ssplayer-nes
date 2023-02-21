@@ -12,6 +12,14 @@
 	sta $8000             ; command $d - IRQ control
 	lda #$00
 	sta $a000             ; disable IRQ counter decrement and IRQ generation
+	
+	ldx #$7
+	@loop:
+		stx $8000     ; command $0-$7 - CHR banking
+		stx $a000     ; map CHR banks linearly
+		dex
+		bpl @loop
+	
 	rts
 .endproc
 

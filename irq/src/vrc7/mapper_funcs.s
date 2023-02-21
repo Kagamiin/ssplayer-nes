@@ -8,6 +8,22 @@
 	lda #$3e
 	sta $9000             ; map second-to-last bank to $c000-$dfff
 	;                     ; to simulate the presence of a fixed bank
+	lda #00
+	sta $a000             ; map CHR banks linearly
+	lda #01
+	sta $a010
+	lda #02
+	sta $b000
+	lda #03
+	sta $b010
+	lda #04
+	sta $c000
+	lda #05
+	sta $c010
+	lda #06
+	sta $d000
+	lda #07
+	sta $d010
 	rts
 .endproc
 

@@ -5,9 +5,13 @@
 .proc mapper_init
 	lda #3
 	sta $5100                      ; PRG mode 3 - four 8K banks
+	lda #0
+	sta $5101                      ; CHR mode 0 - one 8K bank
+	sta $5127                      ; map CHR-ROM bank 0
 	lda #$fe
 	sta $5116                      ; map second-to-last bank to $c000-$dfff
 	;                              ; to simulate the presence of a fixed bank
+	
 	rts
 .endproc
 
