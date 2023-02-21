@@ -4,14 +4,22 @@
 
 .segment "HEADER"
 
-.import INES_MAPPER, INES_SRAM, INES_MIRROR, INES_CHR_BANKS, INES_PRG_BANKS
+.import INES_MAPPER, NES2_SUBMAPPER, NES2_BATTERY
+.import INES_MIRROR, INES_CHR_BANKS, INES_PRG_BANKS
+.import NES2_PRG_RAM_SHIFT, NES2_PRG_NVRAM_SHIFT
+.import NES2_CHR_RAM_SHIFT, NES2_CHR_NVRAM_SHIFT
+.import NES2_CPU_TIMING
 
-	.byte 'N', 'E', 'S', $1A ; ID
-	.byte <INES_PRG_BANKS ; 16k PRG chunk count
-	.byte <INES_CHR_BANKS ; 8k CHR chunk count
-	.byte <INES_MIRROR | (<INES_SRAM << 1) | ((<INES_MAPPER & $f) << 4)
-	.byte (INES_MAPPER & %11110000)
-	.byte $0, $0, $0, $0, $0, $0, $0, $0 ; padding
+	.byte 'N', 'E', 'S', $1A                                      ; 0..3: ID
+	.byte <INES_PRG_BANKS                                         ; 4: 16k PRG chunk count
+	.byte <INES_CHR_BANKS                                         ; 5: 8k CHR chunk count
+	.byte <INES_MIRROR | (<NES2_BATTERY << 1) | ((<INES_MAPPER & $f) << 4) ; 6: mirroring and mapper LSN
+	.byte (<INES_MAPPER & %11110000) | (%1000)                    ; 7: mapper MSN and NES 2.0 identifier
+	.byte (>INES_MAPPER & $f) | ((<NES2_SUBMAPPER & $f) << 4)     ; 8: mapper MSB and submapper
+	.byte (>INES_PRG_BANKS & $f) | ((>INES_CHR_BANKS & $f) << 4)  ; 9: PRG/CHR chunk count MSB
+	.byte (<NES2_PRG_RAM_SHIFT & $f) | ((<NES2_PRG_NVRAM_SHIFT & $f) << 4) ; 10: PRG-RAM/NVRAM size
+	.byte (<NES2_CHR_RAM_SHIFT & $f) | ((<NES2_CHR_NVRAM_SHIFT & $f) << 4) ; 11: CHR-RAM/NVRAM size
+	.byte (<NES2_CPU_TIMING & $3)                                 ; 12: intended CPU type/timing
 
 ; ---------------------------------------------------------------------------
 .segment "MAIN"
