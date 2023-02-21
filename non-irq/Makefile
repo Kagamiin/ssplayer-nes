@@ -3,6 +3,7 @@
 
 #mapper_dir := nrom
 mapper_dir := uxrom
+#mapper_dir := mmc3
 
 #decode_routine := ss1_sync
 decode_routine := ss2_sync
@@ -13,7 +14,9 @@ samples_subdir := cuba-baion/
 
 #superblocks_file := superblocks_cuba-baion-14093-ss1.o
 #superblocks_file := superblocks_cuba-baion-19454-ss1.o
+#superblocks_file := superblocks_cuba-baion-19454-ss1-8kbank.o
 superblocks_file := superblocks_cuba-baion-19454-ss2.o
+#superblocks_file := superblocks_cuba-baion-19454-ss2-8kbank.o
 
 #cfgfile := $(mapper_dir)/ssplayer-32k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
@@ -35,9 +38,9 @@ SAMPLES_DIR := $(BUILD_DIR)/samples
 .PHONY: build_dirs all clean
 
 MAPPER_DIRS := \
-	uxrom \
 	nrom \
-
+	uxrom \
+	mmc3 \
 
 dirs := \
 	$(mapper_dir) \
