@@ -14,6 +14,7 @@ Sample player for **NES** using **SSDPCM** codec (originally designed by "Algori
   - Trigger one-shot samples at any time
   - No RAM buffer required
   - NMI handler can be used for concurrent code execution (with some audio quality degradation)
+  - On supported mappers: scanline IRQs can be used for triggering raster effects (with some audio quality degradation)
 - **SSDPCM** compression ratio of roughly 1:4 (2.13 bit/sample)
   - 1:8 compression ratio (1.06 bit/sample) also possible, with quality way superior to standard NES **DPCM**
 
@@ -37,6 +38,7 @@ Note that among all available mappers with support for cycle IRQs, the **Konami 
 
 - **NROM**
 - **UxROM** (UNROM/UOROM/UNROM-512 etc.)
+- **MMC3**
 
 Support for more mappers might be added in the future. If you wish for me to add support to a specific mapper, please open an issue - though the included mapper implementations should provide a good basis for porting to other mappers on your own.
 
@@ -66,6 +68,8 @@ You'll also need the following tools:
 - cc65/ca65
 - GNU Make
 
-## NROM folder
+## NROM-legacy folder
 
-The `nrom` folder contains an older version of the decompression routine that does not use interrupts and is in fact built to be contained inside an **NROM** cartridge. It's fully cycle-counted and uses **1-bit SSDPCM** instead of **2-bit**, since that provides more storage space for samples.
+The `nrom-legacy` folder contains an older version of the playback routine that does not use interrupts and is in fact built to be contained inside an **NROM** cartridge. It's fully cycle-counted and uses **1-bit SSDPCM** instead of **2-bit**, since that provides more storage space for samples.
+
+Note that a newer, better version is available inside the `non-irq` folder.
