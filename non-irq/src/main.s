@@ -72,8 +72,9 @@
 	lda #$ff
 	sta buf_vram_write           ; put terminator in VRAM write buffer
 	
-	lda #%00001010
-	sta PPUMASK                  ; setup PPUMASK, enable background rendering
+	;lda #%00001010
+	lda #%00000010
+	sta PPUMASK                  ; setup PPUMASK, don't enable background rendering
 	sta ppumask_shadow
 	
 	;lda #%10001000
