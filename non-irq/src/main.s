@@ -38,8 +38,10 @@
 ; ---------------------------------------------------------------------------
 .proc reset
 .globalzp playback_delay_count
+;.globalzp nmi_triggered
 .import mapper_init
 .import load_next_superblock
+;.import load_graphics
 .global ppuctrl_shadow, ppumask_shadow, buf_vram_write
 
 	jsr mapper_init
@@ -73,14 +75,20 @@
 	sta buf_vram_write           ; put terminator in VRAM write buffer
 	
 	;lda #%00001010
-	lda #%00000010
-	sta PPUMASK                  ; setup PPUMASK, don't enable background rendering
+	lda #%00000000
+	sta PPUMASK                  ; setup PPUMASK, disable all rendering
 	sta ppumask_shadow
 	
-	;lda #%10001000
-	lda #%00001000
-	sta PPUCTRL                  ; setup PPUCTRL, don't enable NMI
+	;jsr load_graphics
+
+	;lda #%10101000               ; use 8x16 objects, enable NMI
+	lda #%00101000               ; don't enable NMI
+	sta PPUCTRL                  ; setup PPUCTRL
 	sta ppuctrl_shadow
+	
+	;@wait:
+	;	lda nmi_triggered
+	;	beq @wait
 	
 	jmp main_loop
 .endproc

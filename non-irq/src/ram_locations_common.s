@@ -62,4 +62,5 @@
 	buf_vram_write:
 
 .segment "OAM"
+.global buf_oam
 	buf_oam: .res 256
