@@ -10,9 +10,10 @@ mapper_dir := vrc4
 #decode_routine := ss1_async
 #decode_routine := ss1_async_fast
 #decode_routine := ss1_async_fullunroll
+#decode_routine := ss1c_async_fast
 #decode_routine := ss2_async
-#decode_routine := ss2_async_fast
-decode_routine := ss2_async_fullunroll
+decode_routine := ss2_async_fast
+#decode_routine := ss2_async_fullunroll
 
 #samples_subdir := 
 samples_subdir := the-little-things/
