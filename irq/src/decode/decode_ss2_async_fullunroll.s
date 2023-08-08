@@ -23,7 +23,7 @@
 ;	ptr_slopes
 ; clobbers:
 ;	a, x, y
-;       zp $0..$3
+;       zp $0,$1
 .export decode_async
 .proc decode_async
 
@@ -37,9 +37,8 @@
 
 	.global buf_pcm
 
-	z0       = $0
-	slope0   = $2
-	slope1   = $3
+	slope0   = $0
+	slope1   = $1
 
 .segment "DECODE"
 
@@ -56,28 +55,9 @@
 	lda bits_bank
 	jsr mapper_set_bank_8000
 	
-	ldy #$00
-	decode_byte:
-		lda (ptr_bitstream), y              ; load byte in bitstream
-		tax
-		lda decode_byte_jump_tbl_low, x     ; fetch jump table address to decode this byte
-		sta $0
-		lda decode_byte_jump_tbl_high, x
-		sta $1
-		
-		lda last_sample                     ; load temporary regs
-		ldx idx_pcm_decode
-		jmp ($0000)                         ; jump to fetched address
-	decode_jump_table_return:
-		sta last_sample
-		inx
-		inx
-		inx
-		inx
-		stx idx_pcm_decode
-		iny
-		cpy #16
-		bne decode_byte
+	jsr decode_16_bytes
+	sta last_sample
+	stx idx_pcm_decode
 
 @after:
 	; Bitstream pointer update
@@ -116,6 +96,27 @@
 	rts
 
 .segment "DECODE_UNROLL"
+
+; Sets up the stack to contain the next 16 byte decode functions in a row
+; This allows each decode byte function to keep the state for last_sample and idx_pcm_decode
+; without needing to save and restore them during the batch. This saves around 800 cycles
+; compared to a regular loop.
+decode_16_bytes:
+	ldy #15
+.repeat 16, I
+	lda (ptr_bitstream), y
+	tax
+	lda decode_byte_jump_tbl_high,x
+	pha
+	lda decode_byte_jump_tbl_low,x
+	pha
+.if I <> 15
+	dey
+.endif
+.endrepeat
+	lda last_sample                     ; load temporary regs
+	ldx idx_pcm_decode
+	rts                                 ; Jumps to the first byte to decode.
 	
 	.macro adc_slope_id    idx
 		adc .ident (.sprintf ("slope%x", (idx)))
@@ -175,7 +176,11 @@
 		decode_code_offs1 (by >> 4) & $03,  (by >> 6) & $03
 		decode_code_offs2 (by >> 2) & $03,  (by >> 4) & $03
 		decode_code_offs3 by & $03,         (by >> 2) & $03
-		jmp decode_jump_table_return
+		inx
+		inx
+		inx
+		inx
+		rts
 	.endmacro
 	
 	; This macro generates 256 segments of code to decode each possible byte from the bitstream.
