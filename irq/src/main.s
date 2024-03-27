@@ -85,15 +85,17 @@
 	
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(256 - 127)             ; 127 clock cycles per sample = ~14093 Hz
+	;lda #(256 - 127)             ; 127 clock cycles per sample = ~14093 Hz
+	lda #(256 - 89)             ; 127 clock cycles per sample = ~14093 Hz
 	sta irq_latch_value
 	jsr mapper_irq_set_period
 	jsr mapper_irq_enable
 	cli                          ; enable interrupts, so samples can play
 	
-	lda #4
+	;lda #4
+	lda #6
 	sta oam_dma_sample_skip_cnt  ; setup flags to enable OAM DMA
-	sta oam_dma_enable
+	;sta oam_dma_enable
 	
 	lda #$ff
 	sta buf_vram_write           ; put terminator in VRAM write buffer

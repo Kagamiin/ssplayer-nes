@@ -1,32 +1,42 @@
 # -------------------------------------------------------------
 # Configuration variables
 
-mapper_dir := nrom
-#mapper_dir := uxrom
+#mapper_dir := nrom
+mapper_dir := uxrom
 #mapper_dir := mmc3
 
-decode_routine := ss1c_sync
+#decode_routine := ss1c_sync
 #decode_routine := ss1_sync
+#decode_routine := ss1.6_sync
+decode_routine := ss1.6_sync_softrate
 #decode_routine := ss2_sync
+#decode_routine := ss2_sync_fast
+#decode_routine := ss2_sync_fixedrate
+
+options := -D SOFTRATE=1
 
 #samples_subdir := cuba-baion-32k/
-samples_subdir := cuba-baion-32k-ss1c/
+#samples_subdir := cuba-baion-32k-ss1c/
 #samples_subdir := cuba-baion-ss1/
 #samples_subdir := cuba-baion-ss1c/
 #samples_subdir := cuba-baion/
+#samples_subdir := soad-35094/
+samples_subdir := hyperprism-15980-ss1.6/
 
-superblocks_file := superblocks_cuba-baion-14093-ss1.o
+#superblocks_file := superblocks_cuba-baion-14093-ss1.o
 #superblocks_file := superblocks_cuba-baion-19454-ss1.o
 #superblocks_file := superblocks_cuba-baion-19454-ss1-8kbank.o
 #superblocks_file := superblocks_cuba-baion-19454-ss2.o
 #superblocks_file := superblocks_cuba-baion-19454-ss2-8kbank.o
+#superblocks_file := superblocks_soad-35094-ss2.o
+superblocks_file := superblocks_hyperprism-15980-ss1.6.o
 
-cfgfile := $(mapper_dir)/ssplayer-32k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-32k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-128k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-256k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-512k.cfg
-#cfgfile := $(mapper_dir)/ssplayer-1024k.cfg
+cfgfile := $(mapper_dir)/ssplayer-1024k.cfg
 
 # -------------------------------------------------------------
 
@@ -63,7 +73,6 @@ make_dirs := \
 	$(obj_subdirs)
 
 objects := \
-	$(superblocks_file) \
 	delays.o \
 	nmi.o \
 	main.o \
@@ -72,10 +81,12 @@ objects := \
 	$(mapper_dir)/mapper_funcs.o \
 	$(mapper_dir)/ram_locations.o \
 	decode/superblock_load.o \
+	$(superblocks_file) \
 
 includes := \
 	delays.inc \
-	nes_mmio.inc
+	nes_mmio.inc \
+	$(SRC_DIR)/decode/*
 
 
 vpath %.o $(BUILD_DIR) $(obj_subdirs)
@@ -99,7 +110,7 @@ superblocks_%.o: superblocks_%.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/$(s
 	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)/$(samples_subdir) --include-dir $(SAMPLES_DIR)/$(samples_subdir)
 	
 %.o: %.s $(includes)
-	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR) --bin-include-dir $(ASSETS_DIR)
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR) --bin-include-dir $(ASSETS_DIR) $(options)
 
 build_dirs:
 	@mkdir -p $(make_dirs) 2>/dev/null

@@ -1,5 +1,11 @@
 
-.segment "DECODE"
+.ifdef USE_FIXED_BANK
+	.out "Selected fixed bank."
+	.segment "DECODE_FIXBANK"
+.else
+	.out "Selected decode bank."
+	.segment "DECODE"
+.endif
 
 ; Loads the next superblock in the stream.
 ; If end of superblock list is reached, loops back to the beginning.

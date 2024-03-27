@@ -41,6 +41,7 @@
 ;.globalzp nmi_triggered
 .import mapper_init
 .import load_next_superblock
+.import load_decoder
 ;.import load_graphics
 .global ppuctrl_shadow, ppumask_shadow, buf_vram_write
 
@@ -64,19 +65,24 @@
 		dex
 		bpl @loop            ; clears pages 7 to 0
 
+.ifdef SOFTRATE
+	jsr load_decoder
+.endif
+
 	jsr load_next_superblock     ; load first superblock
 	jsr delay_frame              ; extra time for PPU warm-up
 	
-	lda #(92 - 57) / 5           ; 127 clock cycles per sample = ~14093 Hz
+	;lda #(92 - 57) / 5            ; 127 clock cycles per sample = ~19454 Hz
+	lda #(112 - 57) / 5           ; 112 clock cycles per sample = ~15980 Hz
 	;lda #(127 - 57) / 5           ; 127 clock cycles per sample = ~14093 Hz
 	sta playback_delay_count
 	
 	lda #$ff
 	sta buf_vram_write           ; put terminator in VRAM write buffer
 	
-	;lda #%00001010
-	lda #%00000000
-	sta PPUMASK                  ; setup PPUMASK, disable all rendering
+	;lda #%00001010               ; setup PPUMASK
+	lda #%00000000               ; setup PPUMASK, disable all rendering
+	sta PPUMASK
 	sta ppumask_shadow
 	
 	;jsr load_graphics

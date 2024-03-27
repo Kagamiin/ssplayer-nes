@@ -35,7 +35,7 @@
 
 	lda idx_superblock
 	cmp num_sblk_headers             ; check if we're past the last superblock
-	bmi @continue
+	bne @continue
 	;                                ; if so...
 	sty idx_superblock               ; loop back to first superblock (y = 0)
 	tya

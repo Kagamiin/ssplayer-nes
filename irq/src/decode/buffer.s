@@ -5,11 +5,19 @@
 
 .globalzp idx_pcm_decode, irq_latch_value
 
-.segment "DECODE"
+.ifdef USE_FIXED_BANK
+	.out "Selected fixed bank."
+	.segment "DECODE_FIXBANK"
+.else
+	.out "Selected decode bank."
+	.segment "DECODE"
+.endif
 
 ; Fills the sample buffer with as many samples as needed to not underflow until next frame
 .export fill_buffer
 .proc fill_buffer
+
+.importzp SAMPLES_PER_DECODE_CALL
 
 .global ppumask_shadow
 
@@ -31,7 +39,7 @@ SMC_Import idx_smc_pcm_playback
 	sta tmp_playback_pos
 	sec
 	sbc idx_pcm_decode
-	cmp #64
+	cmp #SAMPLES_PER_DECODE_CALL
 	bcs @fill_buffer          ; if there's at least 64 samples of slack, go fill the buffer
 	
 @after_fill_buffer:

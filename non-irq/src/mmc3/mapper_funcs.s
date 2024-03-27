@@ -19,7 +19,7 @@
 	inc mmc3_mutex
 	lda mmc3_bank_select_shadow
 	and #%11100000
-	ora #%110
+	ora #110
 	sta $8000
 	tya
 	sta $8001

@@ -1,8 +1,8 @@
 # -------------------------------------------------------------
 # Configuration variables
 
-mapper_dir := vrc4
-#mapper_dir := vrc7
+#mapper_dir := vrc4
+mapper_dir := vrc7
 #mapper_dir := mmc5a
 #mapper_dir := n163
 #mapper_dir := fme-7
@@ -11,24 +11,30 @@ mapper_dir := vrc4
 #decode_routine := ss1_async_fast
 #decode_routine := ss1_async_fullunroll
 #decode_routine := ss1c_async_fast
+#decode_routine := ss1.6_async_fast
+decode_routine := ss1.6_async_fullunroll
 #decode_routine := ss2_async
-decode_routine := ss2_async_fast
+#decode_routine := ss2_async_fast
 #decode_routine := ss2_async_fullunroll
 
+options := -D USE_FIXED_BANK=1
+
 #samples_subdir := 
-samples_subdir := the-little-things/
+#samples_subdir := the-little-things/
 #samples_subdir := bad-apple/
 #samples_subdir := bad-apple-ss1/
+samples_subdir := balancetogether-short/
 
 #superblocks_file := superblocks.o
-superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
+#superblocks_file := superblocks_thelittlethings-2par-14093-ss2.o
 #superblocks_file := superblocks_bad-apple-22946-ss2.o
 #superblocks_file := superblocks_bad-apple-22946-ss1.o
+superblocks_file := superblocks_balancetogether-short-20110-ss1.6.o
 
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
-cfgfile := $(mapper_dir)/ssplayer-128k.cfg
+#cfgfile := $(mapper_dir)/ssplayer-128k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-256k.cfg
-#cfgfile := $(mapper_dir)/ssplayer-512k.cfg
+cfgfile := $(mapper_dir)/ssplayer-512k.cfg
 
 # -------------------------------------------------------------
 
@@ -109,7 +115,7 @@ superblocks_%.o: superblocks_%.s $(includes) $(CODEGEN_DIR)/* $(SAMPLES_DIR)/$(s
 	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(CODEGEN_DIR) --bin-include-dir $(SAMPLES_DIR)/$(samples_subdir) --include-dir $(SAMPLES_DIR)/$(samples_subdir)
 	
 %.o: %.s $(includes)
-	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR) --bin-include-dir $(ASSETS_DIR)
+	$(CA65) $< -g -o $(BUILD_DIR)/$@ --include-dir $(SRC_DIR) --bin-include-dir $(ASSETS_DIR) $(options)
 
 build_dirs:
 	@mkdir -p $(make_dirs) 2>/dev/null

@@ -24,6 +24,9 @@
 ; clobbers:
 ;	a, x, y
 ;       zp $0..$4
+.exportzp SAMPLES_PER_DECODE_CALL
+SAMPLES_PER_DECODE_CALL = 64
+
 .export decode_async
 .proc decode_async
 

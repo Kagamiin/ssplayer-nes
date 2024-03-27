@@ -5,8 +5,9 @@
 
 .segment "DECODE"
 
+.res 9
 
-; Decodes 16 bytes (128 samples) of 1-bit SSDPCM.
+; Decodes 32 bytes (128 samples) of 2-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
 ; uses:
 ;	bits_bank
@@ -41,48 +42,50 @@
 
 	.global buf_pcm
 
-	dummy    = $0
-	jmp_dst  = $0
-	slope0   = $2
-	tmp_sample_1 = $3
-	tmp_sample_2 = $4
-	tmp_sample_3 = $5
-	tmp_sample_4 = $6
+	dummy = $0
+	jmp_dst  = $1
+	slope0   = $3
+	tmp_sample_1 = $4
+	tmp_sample_2 = $5
+	tmp_sample_3 = $6
+	tmp_sample_4 = $7
+	tmp_sample_5 = $8
 
 	.macro bankswitch
 		tax                  ; 2  2
 		sta bank_numbers, x  ; 5  7
 	.endmacro
-	
-.segment "DECODE"
 
 prepare:
+	ldy #$00
+
 	lda idx_block
 	c_bne load_slopes
 	lda superblock_length
 	sta idx_block
 
-load_slopes:                      ;      8
-	nop                       ;  2  10
-	lda slopes_bank           ;  3  13
-	bankswitch                ;  7  20
+load_slopes:                      ;      3  y = 0
+	lda slopes_bank           ;  3   6
+	bankswitch                ;  7  13
 
-	ldy #$00                  ;  2  22
-	lda (ptr_slopes), y       ;  5  27
-	sta slope0                ;  3  30
+	lda (ptr_slopes), y       ;  5  18  y = 0
+	sta slope0                ;  3  21
 	
-	lda a:bits_bank           ;  4  34
+	inc dummy                 ;  5  26
+	dec dummy                 ;  5  31
+
+	lda bits_bank             ;  3  34
 	bankswitch                ;  7  41
 	
 	nop                       ;  2  43
-	jmp decode_byte_entry     ;  3  46
+	jmp decode_byte_entry     ;  3  46  y = 0
 
-.include "decode/decode_loop_ss1_sync.inc"
+.include "decode/decode_loop_ss1.6_sync.inc"
 
 cleanup:
 	jmp load_next_superblock
 
-.include "decode/decode_tables_ss1_sync.inc"
+.include "decode/decode_tables_ss1.6_sync.inc"
 
 .endproc
 

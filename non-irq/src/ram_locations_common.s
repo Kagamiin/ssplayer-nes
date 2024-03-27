@@ -23,9 +23,10 @@
 	; Sample playback IRQ
 	; ---------------------
 	
-.globalzp tmp_playback_a, playback_delay_count
+.globalzp tmp_playback_a, playback_delay_count, fine_pitch
 	tmp_playback_a:             .res 1  ; temporary location for playback routine to save the "a" register
 	playback_delay_count:       .res 1  ; used for the sample playback delay loop
+	fine_pitch:                 .res 1  ; used for the softrate routine for fine pitch control
 	
 	; ---------------------
 	; NMI
