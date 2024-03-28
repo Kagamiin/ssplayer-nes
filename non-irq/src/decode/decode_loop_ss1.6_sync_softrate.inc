@@ -95,7 +95,6 @@ after:
 	;                                    ; -1  ..  ..  38
 	inc ptr_slopes + 1                   ;  5  ..  ..  43
 	ldy #$00                             ;  2  ..  ..  45
-patch_location_3_0:
 	play_sample_3_softrate               ;     ..  ..  57 + 5n
 	jmp load_slopes                      ;  3  ..  ..   3
 
@@ -131,9 +130,8 @@ nocarry_ptr_bitstream:                       ;         18
 	sta ptr_slopes                       ;  3      36
 	c_bcc nocarry_2                      ;  3      39  ..
 	;                                    ; -1      ..  38
-	inc   ptr_slopes + 1                 ;  6      ..  43
+	inc ptr_slopes + 1                   ;  6      ..  43
 	ldy #$00                             ;  2      ..  45
-patch_location_3_2:
 	play_sample_3_softrate               ;         ..  57 + 5n
 	jmp load_slopes                      ;  3      ..   3
 

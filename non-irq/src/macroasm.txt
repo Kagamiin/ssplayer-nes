@@ -1,0 +1,27 @@
+Macro assembly language specification
+
+Registers: r0..r15 - 8-bit
+- Can be paired up to form 16-bit registers
+- Occupy $F0-$FF
+
+Register descriptions:
+- r0.r1: accumulator
+- r2.r3: source address
+- r4.r5: destination address
+- r6.r7: counter
+- r8.r9: 8-bit indices, 16-bit index
+- r10.r11: base pointer
+- r12.r13: stack pointer
+- r14.r15: program counter
+
+Alternative register names:
+.          8-bit  16-bit
+- r0.r1:   al.ah    ax
+- r2.r3:            sx
+- r4.r5:            dx
+- r6.r7:   cl.ch    cx
+- r8.r9:   il.ih    ix
+- r10.r11:          bp
+- r12.r13:          sp
+- r14.r15:          pc
+

@@ -10,3 +10,4 @@ build/codegen/*.s
 build/samples/*
 build/**/*.o
 build/*.*
+assets/cuba-baion*

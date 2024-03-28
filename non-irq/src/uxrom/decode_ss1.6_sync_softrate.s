@@ -7,7 +7,7 @@
 
 .res 9
 
-; Decodes 32 bytes (128 samples) of 2-bit SSDPCM.
+; Decodes 16 bytes (80 samples) of 1.6-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
 ; uses:
 ;	bits_bank
@@ -34,7 +34,7 @@
 	.globalzp bits_bank, slopes_bank
 	.globalzp idx_block, idx_pcm_decode, idx_superblock
 	.globalzp superblock_length, last_sample, ptr_bitstream, ptr_slopes
-	.globalzp tmp_playback_a, playback_delay_count, fine_pitch
+	.globalzp tmp_playback_a, playback_delay_count, fine_pitch, last_fine_pitch
 
 	.import load_next_superblock
 	
@@ -50,9 +50,8 @@
 	tmp_sample_3 = $6
 	tmp_sample_4 = $7
 	tmp_sample_5 = $8
-	last_fine_pitch = $9
-	patch_src = $a
-	tmp_patch_id = $c
+	patch_src = $9
+	tmp_patch_id = $b
 
 	.macro bankswitch
 		tax                  ; 2  2
@@ -61,7 +60,6 @@
 
 prepare:
 	ldy #$00
-	sty last_fine_pitch
 
 	lda idx_block
 	c_bne load_slopes
@@ -77,212 +75,237 @@ load_slopes:                      ;      3  y = 0
 	
 	lda last_fine_pitch       ;  3  24
 	cmp fine_pitch            ;  3  27
-	bne patch_trampoline      ;  2  29
+	bne patch_sample_playback ;  2  29
 	nop                       ;  2  31
 
 continue_load_slopes:
-	lda bits_bank             ;  3  34
-	bankswitch                ;  7  41
+	lda a:bits_bank           ;  4  34
+	bankswitch                ;  7  42
 	
-	nop                       ;  2  43
-	jmp decode_byte_entry     ;  3  46  y = 0
+	jmp decode_byte_entry     ;  3  45  y = 0
 
-patch_trampoline:
-	jmp patch_sample_playback
+	.proc patch_sample_playback
+		lda #(patch_table_2 - patch_table_1)       ;  2    2 
+		cmp fine_pitch                             ;  3    5 
+		bcs @not_oob_fp                            ;  3   ..   8
+		;                                            -1    7  ..
+		lda #(patch_table_2 - patch_table_1 - 2)   ;  2    9  ..
+		sta fine_pitch                             ;  3   12  ..
+	@not_oob_fp:                                       ;
+		lda #(patch_table_2 - patch_table_1)       ;  2   14  10
+		cmp last_fine_pitch                        ;  3   17  13
+		bcs @not_oob_lfp                           ;  3   ..  ..   20  16
+		;                                            -1   19  15   ..  ..
+		lda #(patch_table_2 - patch_table_1 - 1)   ;  2   21  17   ..  ..
+		sta last_fine_pitch                        ;  3   24  20   ..  ..
+	@not_oob_lfp:
+		lda fine_pitch                             ;  3   27  23   23  19
+		tax                                        ;  2   29  25   25  21
+
+	@patch1:
+		lda patch_table_1, x            ;  4   4    5   5 *
+		sta tmp_patch_id                ;  3   7    3   8
+		ldy last_fine_pitch             ;  3  10    3  11
+		lda patch_table_1, y            ;  4  14    5  16 *
+		cmp tmp_patch_id                ;  3  17    3  19
+		beq @patch2                     ;  3  20    3  22
+
+		;                                 -1  19   -1  21
+		ldy tmp_patch_id                ;  3  22    3  24
+		lda patches_low, y              ;  4  26    5  29 *
+		sta patch_src                   ;  3  29    3  32
+		lda patches_high, y             ;  3  32    3  35
+		sta patch_src + 1               ;  3  35    3  38
+		;
+		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
+		:
+			lda (patch_src), y         ; 5  5   6  6 *******
+			sta patch_location_1, y    ; 4  9   5 11 *******
+			dey                        ; 2 11   2 13
+			bpl :-                     ; 3 14   3 16
+		;                               ; -1       -1
+		;                               ; 98 135  112 152
+		
+	@patch2:
+		lda patch_table_2, x            ;  4   4    5   5 *
+		sta tmp_patch_id                ;  3   7    3   8
+		ldy last_fine_pitch             ;  3  10    3  11
+		lda patch_table_2, y            ;  4  14    5  16 *
+		cmp tmp_patch_id                ;  3  17    3  19
+		beq @patch3                     ;  3  20    3  22
+
+		;                                 -1  19   -1  21
+		ldy tmp_patch_id                ;  3  22    3  24
+		lda patches_low, y              ;  4  26    5  29 *
+		sta patch_src                   ;  3  29    3  32
+		lda patches_high, y             ;  3  32    3  35
+		sta patch_src + 1               ;  3  35    3  38
+		;
+		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
+		:
+			lda (patch_src), y         ; 5  5   6  6 *******
+			sta patch_location_2, y    ; 4  9   5 11 *******
+			dey                        ; 2 11   2 13
+			bpl :-                     ; 3 14   3 16
+		;                               ; -1       -1
+		;                               ; 98 135  112 152
+		
+	@patch3:
+		lda patch_table_3, x            ;  4   4    5   5 *
+		sta tmp_patch_id                ;  3   7    3   8
+		ldy last_fine_pitch             ;  3  10    3  11
+		lda patch_table_3, y            ;  4  14    5  16 *
+		cmp tmp_patch_id                ;  3  17    3  19
+		beq @patch4                     ;  3  20    3  22
+
+		;                                 -1  19   -1  21
+		ldy tmp_patch_id                ;  3  22    3  24
+		lda patches_low, y              ;  4  26    5  29 *
+		sta patch_src                   ;  3  29    3  32
+		lda patches_high, y             ;  3  32    3  35
+		sta patch_src + 1               ;  3  35    3  38
+		;
+		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
+		:
+			lda (patch_src), y         ; 5  5   6  6 *******
+			sta patch_location_3_1, y  ; 4  9   5 11 *******
+			sta patch_location_3_3, y  ; 4 13   5 16 *******
+			sta patch_location_3_4, y  ; 4 17   5 21 *******
+			dey                        ; 2 19   2 23
+			bpl :-                     ; 3 22   3 26
+		;                               ; -1       -1
+		;                              ; 154 191  182 222
+		
+	@patch4:
+		lda patch_table_4, x            ;  4   4    5   5 *
+		sta tmp_patch_id                ;  3   7    3   8
+		ldy last_fine_pitch             ;  3  10    3  11
+		lda patch_table_4, y            ;  4  14    5  16 *
+		cmp tmp_patch_id                ;  3  17    3  19
+		beq @patch5                     ;  3  20    3  22
+
+		;                                 -1  19   -1  21
+		ldy tmp_patch_id                ;  3  22    3  24
+		lda patches_low, y              ;  4  26    5  29 *
+		sta patch_src                   ;  3  29    3  32
+		lda patches_high, y             ;  3  32    3  35
+		sta patch_src + 1               ;  3  35    3  38
+		;
+		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
+		:
+			lda (patch_src), y         ; 5  5   6  6 *******
+			sta patch_location_4, y    ; 4  9   5 11 *******
+			dey                        ; 2 11   2 13
+			bpl :-                     ; 3 14   3 16
+		;                               ; -1       -1
+		;                               ; 98 135  112 152
+		
+	@patch5:
+		lda patch_table_5, x            ;  4   4    5   5 *
+		sta tmp_patch_id                ;  3   7    3   8
+		ldy last_fine_pitch             ;  3  10    3  11
+		lda patch_table_5, y            ;  4  14    5  16 *
+		cmp tmp_patch_id                ;  3  17    3  19
+		beq @end_patch                  ;  3  20    3  22
+
+		;                                 -1  19   -1  21
+		ldy tmp_patch_id                ;  3  22    3  24
+		lda patches_low, y              ;  4  26    5  29 *
+		sta patch_src                   ;  3  29    3  32
+		lda patches_high, y             ;  3  32    3  35
+		sta patch_src + 1               ;  3  35    3  38
+		;
+		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
+		:
+			lda (patch_src), y         ; 5  5   6  6 *******
+			sta patch_location_5, y    ; 4  9   5 11 *******
+			dey                        ; 2 11   2 13
+			bpl :-                     ; 3 14   3 16
+		;                               ; -1       -1
+		;                               ; 98 135  112 152
+
+	@end_patch:
+		stx last_fine_pitch        ; 3  3
+		ldy #0                     ; 2  5
+		jmp continue_load_slopes   ; 3  8
+
+	patches_low:
+		.byte <patch_0
+		.byte <patch_1
+		.byte <patch_2
+		.byte <patch_3
+		.byte <patch_4
+		.byte <patch_5
+		.byte <patch_0
+
+	patches_high:
+		.byte >patch_0
+		.byte >patch_1
+		.byte >patch_2
+		.byte >patch_3
+		.byte >patch_4
+		.byte >patch_5
+		.byte >patch_0
+
+	.segment "DECODE_TABLES"
+
+	.align 256
+	patch_table_1:
+		.byte 0,  0, 1, 1, 1, 1,  1, 2, 2, 2, 2,  2, 3, 3, 3, 3,  3, 4, 4, 4, 4,  4, 5, 5, 5, 5,  6
+	patch_table_2:
+		.byte 0,  0, 0, 0, 1, 1,  1, 1, 1, 2, 2,  2, 2, 2, 3, 3,  3, 3, 3, 4, 4,  4, 4, 4, 5, 5,  6
+	patch_table_3:
+		.byte 0,  1, 1, 1, 1, 1,  2, 2, 2, 2, 2,  3, 3, 3, 3, 3,  4, 4, 4, 4, 4,  5, 5, 5, 5, 5,  6
+	patch_table_4:
+		.byte 0,  0, 0, 0, 0, 1,  1, 1, 1, 1, 2,  2, 2, 2, 2, 3,  3, 3, 3, 3, 4,  4, 4, 4, 4, 5,  6
+	patch_table_5:
+		.byte 0,  0, 0, 1, 1, 1,  1, 1, 2, 2, 2,  2, 2, 3, 3, 3,  3, 3, 4, 4, 4,  4, 4, 5, 5, 5,  6
+
+	patch_0:
+		nop                         ;  2  2
+		nop                         ;  2  4
+		nop                         ;  2  6
+		nop                         ;  2  8
+		lda a:playback_delay_count  ;  4 12
+
+	patch_1:
+		inc dummy                   ;  5  5
+		nop                         ;  2  7
+		nop                         ;  2  9
+		lda a:playback_delay_count  ;  4 13 (12 + 1)
+
+	patch_2:
+		inc dummy                   ;  5  5
+		dec dummy                   ;  5 10
+		lda a:playback_delay_count  ;  4 14 (12 + 2)
+
+	patch_3:
+		inc dummy                   ;  5  5
+		lda (dummy, x)              ;  6 11
+		lda a:playback_delay_count  ;  4 15 (12 + 3)
+
+	patch_4:
+		lda (dummy, x)              ;  6  6
+		lda (dummy, x)              ;  6 12
+		lda a:playback_delay_count  ;  4 16 (12 + 4)
+
+	patch_5:
+		lda (dummy, x)              ;  6  6
+		lda (dummy, x)              ;  6 12
+		nop                         ;  2 14
+		lda playback_delay_count    ;  3 17 (12 + 5)
+	.endproc
+
+.segment "DECODE"
+
+cleanup:
+	jmp load_next_superblock
 
 .segment "DECODE_RAMCODE"
 
 .include "decode/decode_loop_ss1.6_sync_softrate.inc"
 
 .segment "DECODE"
-
-patch_sample_playback:
-	lda fine_pitch
-	cmp #(patch_table_2 - patch_table_1)
-	bcc @not_oob
-	lda #(patch_table_2 - patch_table_1 - 1)
-	sta fine_pitch
-@not_oob:
-	tax
-
-@patch1:
-	lda patch_table_1, x
-	sta tmp_patch_id
-	ldy last_fine_pitch
-	lda patch_table_1, y
-	cmp tmp_patch_id
-	beq @patch2
-
-	ldy tmp_patch_id
-	lda patches_low, y
-	sta patch_src
-	lda patches_high, y
-	sta patch_src + 1
-	
-	ldy #(patch_2 - patch_1 - 1)
-	:
-		lda (patch_src), y
-		sta patch_location_1, y
-		dey
-		bpl :-
-	
-@patch2:
-	lda patch_table_2, x
-	sta tmp_patch_id
-	ldy last_fine_pitch
-	lda patch_table_2, y
-	cmp tmp_patch_id
-	beq @patch3
-
-	ldy tmp_patch_id
-	lda patches_low, y
-	sta patch_src
-	lda patches_high, y
-	sta patch_src + 1
-	
-	ldy #(patch_2 - patch_1 - 1)
-	:
-		lda (patch_src), y
-		sta patch_location_2, y
-		dey
-		bpl :-
-	
-@patch3:
-	lda patch_table_3, x
-	sta tmp_patch_id
-	ldy last_fine_pitch
-	lda patch_table_3, y
-	cmp tmp_patch_id
-	beq @patch4
-
-	ldy tmp_patch_id
-	lda patches_low, y
-	sta patch_src
-	lda patches_high, y
-	sta patch_src + 1
-	
-	ldy #(patch_2 - patch_1 - 1)
-	:
-		lda (patch_src), y
-		sta patch_location_3_0, y
-		sta patch_location_3_1, y
-		sta patch_location_3_2, y
-		sta patch_location_3_3, y
-		sta patch_location_3_4, y
-		dey
-		bpl :-
-	
-@patch4:
-	lda patch_table_4, x
-	sta tmp_patch_id
-	ldy last_fine_pitch
-	lda patch_table_4, y
-	cmp tmp_patch_id
-	beq @patch5
-
-	ldy tmp_patch_id
-	lda patches_low, y
-	sta patch_src
-	lda patches_high, y
-	sta patch_src + 1
-	
-	ldy #(patch_2 - patch_1 - 1)
-	:
-		lda (patch_src), y
-		sta patch_location_4, y
-		dey
-		bpl :-
-	
-@patch5:
-	lda patch_table_5, x
-	sta tmp_patch_id
-	ldy last_fine_pitch
-	lda patch_table_5, y
-	cmp tmp_patch_id
-	beq @end_patch
-
-	ldy tmp_patch_id
-	lda patches_low, y
-	sta patch_src
-	lda patches_high, y
-	sta patch_src + 1
-	
-	ldy #(patch_2 - patch_1 - 1)
-	:
-		lda (patch_src), y
-		sta patch_location_5, y
-		dey
-		bpl :-
-
-@end_patch:
-	stx last_fine_pitch
-	ldy #0
-	jmp continue_load_slopes
-
-patches_low:
-	.byte <patch_0
-	.byte <patch_1
-	.byte <patch_2
-	.byte <patch_3
-	.byte <patch_4
-	.byte <patch_5
-
-patches_high:
-	.byte >patch_0
-	.byte >patch_1
-	.byte >patch_2
-	.byte >patch_3
-	.byte >patch_4
-	.byte >patch_5
-
-patch_table_1:
-	.byte 0,  0, 1, 1, 1, 1,  1, 2, 2, 2, 2,  2, 3, 3, 3, 3,  3, 4, 4, 4, 4,  4, 5, 5, 5, 5
-patch_table_2:
-	.byte 0,  0, 0, 0, 1, 1,  1, 1, 1, 2, 2,  2, 2, 2, 3, 3,  3, 3, 3, 4, 4,  4, 4, 4, 5, 5
-patch_table_3:
-	.byte 0,  1, 1, 1, 1, 1,  2, 2, 2, 2, 2,  3, 3, 3, 3, 3,  4, 4, 4, 4, 4,  5, 5, 5, 5, 5
-patch_table_4:
-	.byte 0,  0, 0, 0, 0, 1,  1, 1, 1, 1, 2,  2, 2, 2, 2, 3,  3, 3, 3, 3, 4,  4, 4, 4, 4, 5
-patch_table_5:
-	.byte 0,  0, 0, 1, 1, 1,  1, 1, 2, 2, 2,  2, 2, 3, 3, 3,  3, 3, 4, 4, 4,  4, 4, 5, 5, 5
-
-patch_0:
-	nop                         ;  2  2
-	nop                         ;  2  4
-	nop                         ;  2  6
-	nop                         ;  2  8
-	lda a:playback_delay_count  ;  4 12
-
-patch_1:
-	inc dummy                   ;  5  5
-	nop                         ;  2  7
-	nop                         ;  2  9
-	lda a:playback_delay_count  ;  4 13
-
-patch_2:
-	inc dummy                   ;  5  5
-	dec dummy                   ;  5 10
-	lda a:playback_delay_count  ;  4 14
-
-patch_3:
-	inc dummy                   ;  5  5
-	lda (dummy, x)              ;  6 11
-	lda a:playback_delay_count  ;  4 15
-
-patch_4:
-	lda (dummy, x)              ;  6  6
-	lda (dummy, x)              ;  6 12
-	lda a:playback_delay_count  ;  4 16
-
-patch_5:
-	lda (dummy, x)              ;  6  6
-	lda (dummy, x)              ;  6 12
-	nop                         ;  2 14
-	lda playback_delay_count    ;  3 17
-
-
-cleanup:
-	jmp load_next_superblock
 
 .include "decode/decode_tables_ss1.6_sync.inc"
 
@@ -292,18 +315,21 @@ cleanup:
 .proc load_decoder
 	.import __DECODE_RAMCODE_LOAD__, __DECODE_RAMCODE_RUN__, __DECODE_RAMCODE_SIZE__
 
+	addr_load = $00
+	addr_run = $02
+	
 	lda #<__DECODE_RAMCODE_LOAD__
-	sta $00
+	sta addr_load
 	lda #>__DECODE_RAMCODE_LOAD__
 	clc
 	adc #>__DECODE_RAMCODE_SIZE__
-	sta $01
+	sta addr_load + 1
 	lda #<__DECODE_RAMCODE_RUN__
-	sta $02
+	sta addr_run
 	lda #>__DECODE_RAMCODE_RUN__
 	clc
 	adc #>__DECODE_RAMCODE_SIZE__
-	sta $03
+	sta addr_run + 1
 	ldy #<__DECODE_RAMCODE_SIZE__
 	ldx #>__DECODE_RAMCODE_SIZE__
 	cpy #0
@@ -319,8 +345,8 @@ cleanup:
 		cpx #0
 		beq end
 		dex
-		dec $01
-		dec $03
+		dec addr_load + 1
+		dec addr_run + 1
 		bpl loop  ; will always branch
 end:
 	rts
