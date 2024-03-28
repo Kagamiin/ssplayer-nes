@@ -75,7 +75,7 @@ load_slopes:                      ;      3  y = 0
 	
 	lda last_fine_pitch       ;  3  24
 	cmp fine_pitch            ;  3  27
-	bne patch_sample_playback ;  2  29
+	bne patch_trampoline      ;  2  29
 	nop                       ;  2  31
 
 continue_load_slopes:
@@ -84,7 +84,24 @@ continue_load_slopes:
 	
 	jmp decode_byte_entry     ;  3  45  y = 0
 
+patch_trampoline:
+	jmp patch_sample_playback
+
+.segment "DECODE_RAMCODE"
+
+.include "decode/decode_loop_ss1.6_sync_softrate.inc"
+
+.segment "DECODE"
+
+.include "decode/decode_tables_ss1.6_sync.inc"
+
+;---------------------------------------------------------------
 	.proc patch_sample_playback
+
+		.globalzp playback_delay_count, fine_pitch, last_fine_pitch
+
+.segment "DECODE"
+
 		lda #(patch_table_2 - patch_table_1)       ;  2    2 
 		cmp fine_pitch                             ;  3    5 
 		bcs @not_oob_fp                            ;  3   ..   8
@@ -119,12 +136,12 @@ continue_load_slopes:
 		;
 		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
 		:
-			lda (patch_src), y         ; 5  5   6  6 *******
-			sta patch_location_1, y    ; 4  9   5 11 *******
-			dey                        ; 2 11   2 13
-			bpl :-                     ; 3 14   3 16
+			lda (patch_src), y         ; 5  5   5  5
+			sta patch_location_1, y    ; 4  9   5 10 *******
+			dey                        ; 2 11   2 12
+			bpl :-                     ; 3 14   3 15
 		;                               ; -1       -1
-		;                               ; 98 135  112 152
+		;                               ; 98 135  105 145
 		
 	@patch2:
 		lda patch_table_2, x            ;  4   4    5   5 *
@@ -143,12 +160,12 @@ continue_load_slopes:
 		;
 		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
 		:
-			lda (patch_src), y         ; 5  5   6  6 *******
-			sta patch_location_2, y    ; 4  9   5 11 *******
-			dey                        ; 2 11   2 13
-			bpl :-                     ; 3 14   3 16
+			lda (patch_src), y         ; 5  5   5  5
+			sta patch_location_2, y    ; 4  9   5 10 *******
+			dey                        ; 2 11   2 12
+			bpl :-                     ; 3 14   3 15
 		;                               ; -1       -1
-		;                               ; 98 135  112 152
+		;                               ; 98 135  115 145
 		
 	@patch3:
 		lda patch_table_3, x            ;  4   4    5   5 *
@@ -167,14 +184,14 @@ continue_load_slopes:
 		;
 		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
 		:
-			lda (patch_src), y         ; 5  5   6  6 *******
-			sta patch_location_3_1, y  ; 4  9   5 11 *******
-			sta patch_location_3_3, y  ; 4 13   5 16 *******
-			sta patch_location_3_4, y  ; 4 17   5 21 *******
-			dey                        ; 2 19   2 23
-			bpl :-                     ; 3 22   3 26
+			lda (patch_src), y         ; 5  5   5  5
+			sta patch_location_3_1, y  ; 4  9   5 10 *******
+			sta patch_location_3_3, y  ; 4 13   5 15 *******
+			sta patch_location_3_4, y  ; 4 17   5 20 *******
+			dey                        ; 2 19   2 22
+			bpl :-                     ; 3 22   3 25
 		;                               ; -1       -1
-		;                              ; 154 191  182 222
+		;                              ; 154 191  175 215
 		
 	@patch4:
 		lda patch_table_4, x            ;  4   4    5   5 *
@@ -193,12 +210,12 @@ continue_load_slopes:
 		;
 		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
 		:
-			lda (patch_src), y         ; 5  5   6  6 *******
-			sta patch_location_4, y    ; 4  9   5 11 *******
-			dey                        ; 2 11   2 13
-			bpl :-                     ; 3 14   3 16
+			lda (patch_src), y         ; 5  5   5  5
+			sta patch_location_4, y    ; 4  9   5 10 *******
+			dey                        ; 2 11   2 12
+			bpl :-                     ; 3 14   3 15
 		;                               ; -1       -1
-		;                               ; 98 135  112 152
+		;                               ; 98 135  115 145
 		
 	@patch5:
 		lda patch_table_5, x            ;  4   4    5   5 *
@@ -217,12 +234,12 @@ continue_load_slopes:
 		;
 		ldy #(patch_2 - patch_1 - 1)    ;  2  37    2  40
 		:
-			lda (patch_src), y         ; 5  5   6  6 *******
-			sta patch_location_5, y    ; 4  9   5 11 *******
-			dey                        ; 2 11   2 13
-			bpl :-                     ; 3 14   3 16
+			lda (patch_src), y         ; 5  5   5  5
+			sta patch_location_5, y    ; 4  9   5 10 *******
+			dey                        ; 2 11   2 12
+			bpl :-                     ; 3 14   3 15
 		;                               ; -1       -1
-		;                               ; 98 135  112 152
+		;                               ; 98 135  115 145
 
 	@end_patch:
 		stx last_fine_pitch        ; 3  3
@@ -247,7 +264,7 @@ continue_load_slopes:
 		.byte >patch_5
 		.byte >patch_0
 
-	.segment "DECODE_TABLES"
+.segment "DECODE_TABLES"
 
 	.align 256
 	patch_table_1:
@@ -300,14 +317,6 @@ continue_load_slopes:
 
 cleanup:
 	jmp load_next_superblock
-
-.segment "DECODE_RAMCODE"
-
-.include "decode/decode_loop_ss1.6_sync_softrate.inc"
-
-.segment "DECODE"
-
-.include "decode/decode_tables_ss1.6_sync.inc"
 
 .endproc
 
