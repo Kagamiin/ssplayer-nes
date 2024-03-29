@@ -1,10 +1,15 @@
 
 	decode_byte_preamble:                       ;     10
-		ldx #6                              ;  2  12
+		lda playback_delay_count            ;  3  13
+		sec                                 ;  2  15
+		sbc #1                              ;  2  17
+		sta tmp_delay_count                 ;  3  20
+		
+		ldx #4                              ;  2  22
 		:
 			dex                         ;  2
 			c_bne :-                    ;  3
-			;                           ; 29  41
+			;                           ; 19  41
 		nop                                 ;  2  43
 		nop                                 ;  2  45
 	patch_location_3_4:
@@ -89,14 +94,12 @@ after:
 	; ---------------------------------- ;
 
 @slope_update:                               ;     29  ..
-	inc ptr_slopes                       ;  5  34  ..  update slope pointer
-	nop                                  ;  2  36
+	ldy #$00                             ;  2  31  ..
+	inc ptr_slopes                       ;  5  36  ..  update slope pointer
 	c_bne nocarry_1                      ;  3  39  ..  ..
 	;                                    ; -1  ..  ..  38
 	inc ptr_slopes + 1                   ;  5  ..  ..  43
-	ldy #$00                             ;  2  ..  ..  45
-	play_sample_3_softrate               ;     ..  ..  57 + 5n
-	jmp load_slopes                      ;  3  ..  ..   3
+	jmp hopover_page_boundary            ;  3  ..  ..  46 ; HACK
 
 nocarry_1:                                   ;     39  ..
 	nop                                  ;  2  41  ..
@@ -105,6 +108,10 @@ nocarry_1:                                   ;     39  ..
 patch_location_3_1:
 	play_sample_3_softrate               ;     57 + 5n
 	jmp load_slopes                      ;  3   3  ..
+
+hopover_page_boundary:
+	play_sample_3_softrate               ;     ..  ..  58 + 5n  NOTE: misaligned by +1 cycle
+	jmp load_slopes                      ;  3  ..  ..   4 NOTE: misaligned by +1 cycle
 
 
 nocarry_ptr_bitstream:                       ;         18

@@ -126,88 +126,118 @@ __PLAY_SAMPLE_INC__ = 1
 .endmacro
 
 .macro play_sample_1_softrate
-	nop                        ;  2  2
-	nop                        ;  2  4
-	nop                        ;  2  6
-	nop                        ;  2  8
-	lda a:playback_delay_count ;  4 12
-	sec                        ;  2 14
-	sbc #2                     ;  2 16
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
 	:
 		sbc #1              ;  2
 		c_bne :-            ;  3
-	;                         ; -11  5 + 5n, n >= 3
+	;                          ; -6 -1 + 5n, n >= 3
 
-	lda tmp_sample_1           ;  3  8 + 5n
-	sta $4011                  ;  4 12 + 5n
+	c_beq :+                   ;  3  2 + 5n
+	.byte $c9 ; cmp #$c9        ; 2  4
+	cmp #$c9                   ;  2  :  4
+	;           cmp #$c9        ; 2  6  :  4
+	cmp #$c9                   ;  2  :  6  :  4
+	;           cmp #$c9        ; 2  8  :  6  :  4
+:                                   ;    :  ;  :  ;  :  .
+	cmp $ea                    ;  3  ;  9  :  7  ;  5
+	;           nop             ; 2 10  '  8  '  6  '
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_1           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
 .endmacro
 
 .macro play_sample_2_softrate
-	nop                        ;  2  2
-	nop                        ;  2  4
-	nop                        ;  2  6
-	nop                        ;  2  8
-	lda a:playback_delay_count ;  4 12
-	sec                        ;  2 14
-	sbc #2                     ;  2 16
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
 	:
 		sbc #1              ;  2
 		c_bne :-            ;  3
-	;                         ; -11  5 + 5n, n >= 3
+	;                          ; -6 -1 + 5n, n >= 3
 
-	lda tmp_sample_2           ;  3  8 + 5n
-	sta $4011                  ;  4 12 + 5n
+	c_beq :+                   ;  3  2
+	.byte $c9 ; cmp #$c9        ; 2  4
+	cmp #$c9                   ;  2  :  4
+	;           cmp #$c9        ; 2  6  :  4
+	cmp #$c9                   ;  2  :  6  :  4
+	;           cmp #$c9        ; 2  8  :  6  :  4
+:                                   ;    :  ;  :  ;  :  .
+	cmp $ea                    ;  3  ;  9  :  7  ;  5
+	;           nop             ; 2 10  '  8  '  6  '
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_2           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
 .endmacro
 
 .macro play_sample_3_softrate
-	nop                        ;  2  2
-	nop                        ;  2  4
-	nop                        ;  2  6
-	nop                        ;  2  8
-	lda a:playback_delay_count ;  4 12
-	sec                        ;  2 14
-	sbc #2                     ;  2 16
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
 	:
 		sbc #1              ;  2
 		c_bne :-            ;  3
-	;                         ; -11  5 + 5n, n >= 3
+	;                          ; -6 -1 + 5n, n >= 3
 
-	lda tmp_sample_3           ;  3  8 + 5n
-	sta $4011                  ;  4 12 + 5n
+	c_beq :+                   ;  3  2
+	.byte $c9 ; cmp #$c9        ; 2  4
+	cmp #$c9                   ;  2  :  4
+	;           cmp #$c9        ; 2  6  :  4
+	cmp #$c9                   ;  2  :  6  :  4
+	;           cmp #$c9        ; 2  8  :  6  :  4
+:                                   ;    :  ;  :  ;  :  .
+	cmp $ea                    ;  3  ;  9  :  7  ;  5
+	;           nop             ; 2 10  '  8  '  6  '
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_3           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
 .endmacro
 
 .macro play_sample_4_softrate
-	nop                        ;  2  2
-	nop                        ;  2  4
-	nop                        ;  2  6
-	nop                        ;  2  8
-	lda a:playback_delay_count ;  4 12
-	sec                        ;  2 14
-	sbc #2                     ;  2 16
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
 	:
 		sbc #1              ;  2
 		c_bne :-            ;  3
-	;                         ; -11  5 + 5n, n >= 3
+	;                          ; -6 -1 + 5n, n >= 3
 
-	lda tmp_sample_4           ;  3  8 + 5n
-	sta $4011                  ;  4 12 + 5n
+	c_beq :+                   ;  3  2
+	.byte $c9 ; cmp #$c9        ; 2  4
+	cmp #$c9                   ;  2  :  4
+	;           cmp #$c9        ; 2  6  :  4
+	cmp #$c9                   ;  2  :  6  :  4
+	;           cmp #$c9        ; 2  8  :  6  :  4
+:                                   ;    :  ;  :  ;  :  .
+	cmp $ea                    ;  3  ;  9  :  7  ;  5
+	;           nop             ; 2 10  '  8  '  6  '
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_4           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
 .endmacro
 
 .macro play_sample_5_softrate
-	nop                        ;  2  2
-	nop                        ;  2  4
-	nop                        ;  2  6
-	nop                        ;  2  8
-	lda a:playback_delay_count ;  4 12
-	sec                        ;  2 14
-	sbc #2                     ;  2 16
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
 	:
 		sbc #1              ;  2
 		c_bne :-            ;  3
-	;                         ; -11  5 + 5n, n >= 3
+	;                          ; -6 -1 + 5n, n >= 3
 
-	lda tmp_sample_5           ;  3  8 + 5n
-	sta $4011                  ;  4 12 + 5n
+	c_beq :+                   ;  3  2
+	.byte $c9 ; cmp #$c9        ; 2  4
+	cmp #$c9                   ;  2  :  4
+	;           cmp #$c9        ; 2  6  :  4
+	cmp #$c9                   ;  2  :  6  :  4
+	;           cmp #$c9        ; 2  8  :  6  :  4
+:                                   ;    :  ;  :  ;  :  .
+	cmp $ea                    ;  3  ;  9  :  7  ;  5
+	;           nop             ; 2 10  '  8  '  6  '
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_5           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
 .endmacro
 
 .endif

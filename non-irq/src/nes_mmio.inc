@@ -11,5 +11,8 @@ PPUADDR    = $2006
 PPUDATA    = $2007
 
 OAMDMA     = $4014
+IOSTROBE   = $4016
+IOP1       = $4016
+IOP2       = $4017
 
 .endif
