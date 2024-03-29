@@ -1,84 +1,89 @@
 
-.segment "DECODE_RAMCODE"
-
 	decode_byte_preamble:                       ;     10
 		lda playback_delay_count            ;  3  13
 		sec                                 ;  2  15
 		sbc #1                              ;  2  17
 		sta tmp_delay_count                 ;  3  20
 		
-		ldx #4                              ;  2  22
+		lda a:fine_pitch                    ;  4  24
+		cmp last_fine_pitch                 ;  3  27
+		bne patch_trampoline                ;  2  29  ; expected to not branch
+		
+		ldx #3                              ;  2  31
 		:
 			dex                         ;  2
 			c_bne :-                    ;  3
-			;                           ; 19  41
-		nop                                 ;  2  43
-		nop                                 ;  2  45
+			;                           ; 14  45
+	continue_playing:
 	patch_location_3_4:
 		play_sample_3_softrate              ;     57 + 5n
 		
-		ldx #8                              ;  2   2
+		ldx #7                              ;  2   2
 		:
 			dex                         ;  2
 			c_bne :-                    ;  3
-			;                           ; 39  41
-		nop                                 ;  2  43
-		nop                                 ;  2  45
+			;                           ; 34  36
+		nop                                 ;  2  38
+		nop                                 ;  2  40
+		nop                                 ;  2  42
+		c_beq patch_location_4              ;  3  45
+
+	patch_trampoline:
+		jmp patch_sample_playback
+
 	decode_byte_entry:
+	patch_location_4_m1:
+		play_sample_4_softrate_m1cyc        ;     57 + 5n
+		lda (ptr_bitstream), y              ;  5   7  load byte in bitstream
+		tax                                 ;  2   7
+		lda decode_byte_jump_tbl1_low, x    ;  4  11  fetch jump table address to decode nibble
+		sta jmp_dst1                        ;  3  14
+		
+		lda last_sample                     ;  3  17  load temporary regs
+		jmp (jmp_dst1)                      ;  5  22  jump to fetched address
+		; --------------------------------- ; 19  41
+
 	patch_location_4:
 		play_sample_4_softrate              ;     57 + 5n
-			
-	decode_byte:
 		lda (ptr_bitstream), y              ;  5   5  load byte in bitstream
 		tax                                 ;  2   7
 		lda decode_byte_jump_tbl1_low, x    ;  4  11  fetch jump table address to decode nibble
-		sta jmp_dst                         ;  3  14
-		lda decode_byte_jump_tbl1_high, x   ;  4  18
-		sta jmp_dst + 1                     ;  3  21
-		ldx #4                              ;  2  23
-		:
-			dex                         ;  2
-			c_bne :-                    ;  3
-			;                           ; 19  42
-		lda dummy                           ;  3  45
-	patch_location_5:
-		play_sample_5_softrate              ;     57 + 5n
+		sta jmp_dst1                        ;  3  14
 		
-		lda last_sample                     ;  3   3  load temporary regs
-		jmp (jmp_dst)                       ;  5   8  jump to fetched address
-		; --------------------------------- ; 19  27
+		lda last_sample                     ;  3  17  load temporary regs
+		jmp (jmp_dst1)                      ;  5  22  jump to fetched address
+		; --------------------------------- ; 19  41
 	
 	ladder:
 		jmp decode_byte_preamble            ;  3  10
 	
-	decode_byte_return_part1:
-		sta last_sample                     ;  3  30
-		lda (ptr_bitstream), y              ;  5  35  load byte in bitstream
-		tax                                 ;  2  37
-		lda decode_byte_jump_tbl2_low, x    ;  4  41  fetch jump table address to decode nibble
-		sta a:jmp_dst                       ;  4  45
+	decode_byte_return_nibble1:
+		sta a:last_sample                   ;  3  45
 	patch_location_1:
 		play_sample_1_softrate              ;     57 + 5n
+
+		lda (ptr_bitstream), y              ;  5   5  load byte in bitstream
+		tax                                 ;  2   7
+		lda decode_byte_jump_tbl2_low, x    ;  4  11  fetch jump table address to decode nibble
+		sta jmp_dst2                        ;  3  14
 		
-		lda decode_byte_jump_tbl2_high, x   ;  4   4
-		sta jmp_dst + 1                     ;  3   7
-		lda last_sample                     ;  3  10  load temporary regs
-		jmp (jmp_dst)                       ;  5  15  jump to fetched address
-		; --------------------------------- ; 27  42
+		lda last_sample                     ;  3  17  load temporary regs
+		jmp (jmp_dst2)                      ;  5  22  jump to fetched address
+		; --------------------------------- ; 19  41
 		
-	decode_byte_return_part2:
-		sta last_sample                     ;  3  45
+	decode_byte_return_nibble2:
+		sta a:last_sample                   ;  4  45
 	patch_location_2:
 		play_sample_2_softrate              ;     57 + 5n
 		
 		iny                                 ;  2   2
-		cpy #16                             ;  2   4
+		cpy #32                             ;  2   4
 		c_bne ladder                        ;  3   7
 
 after:
 	; Bitstream pointer update           ; -1   6
 	lda ptr_bitstream                    ;  3   9
-	adc #15                              ;  2  11      HACK: carry is always set, so we're
+	adc #31                              ;  2  11      HACK: carry is always set, so we're
 	;                                                  actually adding 16
 	sta ptr_bitstream                    ;  3  14
 	x_bcc nocarry_ptr_bitstream          ;  4  ..  18  HACK: branch crosses page boundary
@@ -96,24 +101,25 @@ after:
 	; ---------------------------------- ;
 
 @slope_update:                               ;     29  ..
-	ldy #$00                             ;  2  31  ..
-	inc ptr_slopes                       ;  5  36  ..  update slope pointer
-	c_bne nocarry_1                      ;  3  39  ..  ..
-	;                                    ; -1  ..  ..  38
-	inc ptr_slopes + 1                   ;  5  ..  ..  43
-	jmp hopover_page_boundary            ;  3  ..  ..  46 ; HACK
+	lda ptr_slopes                       ;  3  32  ..
+	adc #1                               ;  2  34  ..  HACK: carry is always set, so we're actually adding 2
+	sta ptr_slopes                       ;  3  37  ..
+	c_bne nocarry_1                      ;  3  40  ..  ..
+	;                                    ; -1  ..  ..  39
+	inc ptr_slopes + 1                   ;  5  ..  ..  44
+	jmp hopover_page_boundary            ;  3  ..  ..  47 ; HACK
 
-nocarry_1:                                   ;     39  ..
-	nop                                  ;  2  41  ..
-	nop                                  ;  2  43  ..
+nocarry_1:                                   ;     40  ..
+	ldy dummy                            ;  3  43  ..
 	ldy #$00                             ;  2  45  ..
 patch_location_3_1:
 	play_sample_3_softrate               ;     57 + 5n
 	jmp load_slopes                      ;  3   3  ..
 
 hopover_page_boundary:
-	play_sample_3_softrate               ;     ..  ..  58 + 5n  NOTE: misaligned by +1 cycle
-	jmp load_slopes                      ;  3  ..  ..   4 NOTE: misaligned by +1 cycle
+	play_sample_3_softrate               ;     ..  ..  59 + 5n  NOTE: misaligned by +2 cycles
+	ldy #$00                             ;  2  ..  ..   4
+	jmp load_slopes                      ;  3  ..  ..   7 NOTE: misaligned by +4 cycles
 
 
 nocarry_ptr_bitstream:                       ;         18
@@ -135,7 +141,7 @@ nocarry_ptr_bitstream:                       ;         18
 @slope_update:                               ;         26
 	clc                                  ;  2      28  NOTE: carry is always clear
 	lda ptr_slopes                       ;  3      31  but we're clearing it to meet cycle count
-	adc #1                               ;  2      33  update slope pointer
+	adc #2                               ;  2      33  update slope pointer
 	sta ptr_slopes                       ;  3      36
 	c_bcc nocarry_2                      ;  3      39  ..
 	;                                    ; -1      ..  38

@@ -210,7 +210,29 @@ __PLAY_SAMPLE_INC__ = 1
 	;           cmp #$c5        ; 2  8  :  6  :  4
 :       ;                                :  ;  :  ;  :  .
 	cmp $ea                    ;  3  ;  9  :  7  ;  5
-	;           nop             ; 2 10  '  8  '  6  '
+	;           nop             ; 2 10  '  8  '  6  '  4
+
+	;                          ;     5 + 5n + f
+	lda tmp_sample_4           ;  3  8 + 5n + f
+	sta $4011                  ;  4 12 + 5n + f
+.endmacro
+
+.macro play_sample_4_softrate_m1cyc
+	lda tmp_delay_count        ;  3  3
+	sec                        ;  2  5
+	:
+		sbc #1              ;  2
+		c_bne :-            ;  3
+	;                          ; -6 -1 + 5n, n >= 3
+
+	c_beq :+                   ;  3  2
+	cmp #$c9                    ; 2  4
+	;           cmp #$c9       ;  2  :  4
+	cmp #$c9                    ; 2  6  :  4
+	;           cmp #$c9       ;  2  :  6  :  4
+	cmp #$c5                    ; 2  8  :  6  :  4
+:       ;           cmp $ea        ;  3  ;  9  :  7  ;  5
+	nop                         ; 2 10  '  8  '  6  '  4
 
 	;                          ;     5 + 5n + f
 	lda tmp_sample_4           ;  3  8 + 5n + f

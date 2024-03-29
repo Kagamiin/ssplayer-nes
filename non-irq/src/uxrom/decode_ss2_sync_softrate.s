@@ -7,7 +7,7 @@
 
 .res 9
 
-; Decodes 16 bytes (80 samples) of 1.6-bit SSDPCM.
+; Decodes 32 bytes (128 samples) of 2-bit SSDPCM.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
 ; uses:
 ;	bits_bank
@@ -43,14 +43,15 @@
 	.global buf_pcm
 
 	dummy = $0
-	jmp_dst  = $1
-	slope0   = $3
-	tmp_sample_1 = $4
-	tmp_sample_2 = $5
-	tmp_sample_3 = $6
-	tmp_sample_4 = $7
-	tmp_sample_5 = $8
-	tmp_delay_count = $9
+	jmp_dst1 = $1
+	jmp_dst2 = $3
+	slope0   = $5
+	slope1   = $6
+	tmp_sample_1 = $7
+	tmp_sample_2 = $8
+	tmp_sample_3 = $9
+	tmp_sample_4 = $A
+	tmp_delay_count = $B
 
 	.macro bankswitch
 		tax                  ; 2  2
@@ -58,6 +59,11 @@
 	.endmacro
 
 prepare:
+	lda #>decode_unroll_1
+	sta jmp_dst1+1
+	lda #>decode_unroll_2
+	sta jmp_dst2+1
+
 	ldy #$00
 
 	lda playback_delay_count
@@ -77,27 +83,25 @@ load_slopes:                      ;      3  y = 0
 
 	lda (ptr_slopes), y       ;  5  18  y = 0
 	sta slope0                ;  3  21
+	iny                       ;  2  23
+	lda (ptr_slopes), y       ;  5  28  y = 1
+	sta slope1                ;  3  31
+	dey                       ;  2  33  y = 0
 	
-	lda dummy                 ;  3  24
+	lda bits_bank             ;  3  36
+	bankswitch                ;  7  43
 	
-	lda last_fine_pitch       ;  3  27
-	cmp fine_pitch            ;  3  30
-	bne patch_trampoline      ;  2  32  ; expected to not be taken
+	jmp decode_byte_entry     ;  3  46  y = 0
 
-continue_load_slopes:
-	lda bits_bank             ;  3  35
-	bankswitch                ;  7  42
-	
-	jmp decode_byte_entry     ;  3  45  y = 0
+.segment "DECODE_RAMCODE"
 
-patch_trampoline:
-	jmp patch_sample_playback
+.include "decode/decode_loop_ss2_sync_softrate.inc"
 
-.include "decode/decode_loop_ss1.6_sync_softrate.inc"
+.segment "DECODE"
 
-.include "decode/decode_tables_ss1.6_sync.inc"
+.include "decode/decode_tables_ss2_sync_softrate.inc"
 
-.include "decode/decode_patch_ss1.6_sync_softrate.inc"
+.include "decode/decode_patch_ss2_sync_softrate.inc"
 
 .segment "DECODE"
 
