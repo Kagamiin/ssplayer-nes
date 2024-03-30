@@ -20,23 +20,25 @@
 		
 
 		lda patch_table_1, x            ;  4   4    5   5 *
-		sta patch_location_1 + 8        ;  4   8    4   9
+		sta patch_location_1_0 + 10     ;  4   8    4   9
+		sta patch_location_1_1 + 10     ;  4  12    4  13
 
-		lda patch_table_2, x            ;  4  12    5  14 *
-		sta patch_location_2 + 8        ;  4  16    4  18
+		lda patch_table_2, x            ;  4  16    5  18 *
+		sta patch_location_2_0 + 10     ;  4  20    4  22
+		sta patch_location_2_1 + 10     ;  4  24    4  26
+		sta patch_location_2_2 + 10     ;  4  28    4  30
+		sta patch_location_2_3 + 10     ;  4  32    4  34
 
-		lda patch_table_3, x            ;  4  20    5  23 *
-		;sta patch_location_3_0 + 8      ;  4  24    4  27
-		sta patch_location_3_1 + 8      ;  4  24    4  27
-		;sta patch_location_3_2 + 8      ;  4  24    4  27
-		sta patch_location_3_3 + 8      ;  4  28    4  31
-		sta patch_location_3_4 + 8      ;  4  32    4  35
+		lda patch_table_3, x            ;  4  36    5  39 *
+		sta patch_location_3_0 + 10     ;  4  40    4  43
+		sta patch_location_3_1 + 10     ;  4  44    4  47
 
-		lda patch_table_4, x            ;  4  36    5  40 *
-		sta patch_location_4 + 8        ;  4  40    4  44
+		lda patch_table_4, x            ;  4  48    5  52 *
+		sta patch_location_4_0 + 10     ;  4  52    4  56
+		sta patch_location_4_1 + 10     ;  4  56    4  60
 
 		stx last_fine_pitch        ; 3  3
-		jmp continue_playing       ; 3  6
+		jmp continue_load_slopes   ; 3  6
 
 .segment "DECODE_TABLES"
 

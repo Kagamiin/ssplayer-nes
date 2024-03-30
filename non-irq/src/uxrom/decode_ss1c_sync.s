@@ -7,7 +7,7 @@
 
 
 
-; Decodes 16 bytes (128 samples) of 1-bit SSDPCM.
+; Decodes 16 bytes (128 samples) of 1-bit SSDPCM with comb filter.
 ; If the end of the superblock is reached, triggers the next superblock to be loaded.
 ; uses:
 ;	bits_bank

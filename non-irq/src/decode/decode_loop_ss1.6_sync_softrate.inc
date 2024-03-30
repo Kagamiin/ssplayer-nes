@@ -7,23 +7,19 @@
 		sbc #1                              ;  2  17
 		sta tmp_delay_count                 ;  3  20
 		
-		ldx #4                              ;  2  22
+		ldx #5                              ;  2  22
 		:
 			dex                         ;  2
 			c_bne :-                    ;  3
-			;                           ; 19  41
-		nop                                 ;  2  43
-		nop                                 ;  2  45
+			;                           ; 24  46
 	patch_location_3_4:
 		play_sample_3_softrate              ;     57 + 5n
 		
-		ldx #8                              ;  2   2
+		ldx #9                              ;  2   2
 		:
 			dex                         ;  2
 			c_bne :-                    ;  3
-			;                           ; 39  41
-		nop                                 ;  2  43
-		nop                                 ;  2  45
+			;                           ; 39  46
 	decode_byte_entry:
 	patch_location_4:
 		play_sample_4_softrate              ;     57 + 5n
@@ -40,7 +36,8 @@
 			dex                         ;  2
 			c_bne :-                    ;  3
 			;                           ; 19  42
-		lda dummy                           ;  3  45
+		nop                                 ;  2  44
+		nop                                 ;  2  46
 	patch_location_5:
 		play_sample_5_softrate              ;     57 + 5n
 		
@@ -56,7 +53,8 @@
 		lda (ptr_bitstream), y              ;  5  35  load byte in bitstream
 		tax                                 ;  2  37
 		lda decode_byte_jump_tbl2_low, x    ;  4  41  fetch jump table address to decode nibble
-		sta a:jmp_dst                       ;  4  45
+		sta jmp_dst                         ;  3  44
+		nop                                 ;  2  46
 	patch_location_1:
 		play_sample_1_softrate              ;     57 + 5n
 		
@@ -67,7 +65,7 @@
 		; --------------------------------- ; 27  42
 		
 	decode_byte_return_part2:
-		sta last_sample                     ;  3  45
+		sta a:last_sample                   ;  4  46
 	patch_location_2:
 		play_sample_2_softrate              ;     57 + 5n
 		
@@ -88,9 +86,12 @@ after:
 	c_bne @slope_update                  ;  3  29  ..  ..
         ;                                    ; -1  ..  ..  28
 	inc idx_superblock                   ;  5  ..  ..  33
-	inc dummy                            ;  5  ..  ..  38
-	dec dummy                            ;  5  ..  ..  43
-	nop                                  ;  2  ..  ..  45
+	ldx #2                               ;  2  ..  ..  35
+	:
+		dex                           ;  2
+		c_bne :-                      ;  3
+		;                            ;  9  ..  ..  44
+	nop                                  ;  2  ..  ..  46
 	play_sample_3_softrate               ;     ..  ..  57 + 5n
 	jmp cleanup                          ;  3  ..  ..   3  get out of the loop
 	; ---------------------------------- ;
@@ -104,16 +105,15 @@ after:
 	jmp hopover_page_boundary            ;  3  ..  ..  46 ; HACK
 
 nocarry_1:                                   ;     39  ..
-	nop                                  ;  2  41  ..
-	nop                                  ;  2  43  ..
-	ldy #$00                             ;  2  45  ..
+	inc dummy                            ;  5  44  ..
+	ldy #$00                             ;  2  46  ..
 patch_location_3_1:
 	play_sample_3_softrate               ;     57 + 5n
 	jmp load_slopes                      ;  3   3  ..
 
 hopover_page_boundary:
-	play_sample_3_softrate               ;     ..  ..  58 + 5n  NOTE: misaligned by +1 cycle
-	jmp load_slopes                      ;  3  ..  ..   4 NOTE: misaligned by +1 cycle
+	play_sample_3_softrate               ;     ..  ..  57 + 5n
+	jmp load_slopes                      ;  3  ..  ..   3
 
 
 nocarry_ptr_bitstream:                       ;         18
@@ -121,33 +121,31 @@ nocarry_ptr_bitstream:                       ;         18
 	c_bne @slope_update                  ;  3  ..  26
         ;                                    ; -1  25  ..
 	inc idx_superblock                   ;  5  30  ..
-	ldx #2                               ;  2  32  ..
+	ldx #3                               ;  2  32  ..
 	:
-		dex                          ;  2
-		c_bne :-                     ;  3
-		;                            ;  9  41  ..
-	nop                                  ;  2  43
-	nop                                  ;  2  45
+		dex                           ;  2
+		c_bne :-                      ;  3
+		;                            ; 14  46  ..
 	play_sample_3_softrate               ;     57 + 5n
 	jmp cleanup                          ;  3   3  get out of the loop
 	; ---------------------------------- ;
 
 @slope_update:                               ;         26
 	clc                                  ;  2      28  NOTE: carry is always clear
-	lda ptr_slopes                       ;  3      31  but we're clearing it to meet cycle count
-	adc #1                               ;  2      33  update slope pointer
-	sta ptr_slopes                       ;  3      36
-	c_bcc nocarry_2                      ;  3      39  ..
-	;                                    ; -1      ..  38
-	inc ptr_slopes + 1                   ;  6      ..  43
-	ldy #$00                             ;  2      ..  45
+	lda a:ptr_slopes                     ;  4      32  but we're clearing it to meet cycle count
+	adc #1                               ;  2      34  update slope pointer
+	sta ptr_slopes                       ;  3      37
+	c_bcc nocarry_2                      ;  3      40  ..
+	;                                    ; -1      ..  39
+	inc ptr_slopes + 1                   ;  5      ..  44
+	ldy #$00                             ;  2      ..  46
 	play_sample_3_softrate               ;         ..  57 + 5n
 	jmp load_slopes                      ;  3      ..   3
 
-nocarry_2:                                   ;     ..  39
-	nop                                  ;  2  ..  41
-	nop                                  ;  2  ..  43
-	ldy #$00                             ;  2  ..  45
+nocarry_2:                                   ;     ..  40
+	nop                                  ;  2  ..  42
+	nop                                  ;  2  ..  44
+	ldy #$00                             ;  2  ..  46
 patch_location_3_3:
 	play_sample_3_softrate               ;         57 + 5n
 	jmp load_slopes                      ;  3       3

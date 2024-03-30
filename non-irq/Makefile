@@ -5,14 +5,16 @@
 mapper_dir := uxrom
 #mapper_dir := mmc3
 
-#decode_routine := ss1c_sync
 #decode_routine := ss1_sync
+#decode_routine := ss1_sync_softrate
+#decode_routine := ss1c_sync
+#decode_routine := ss1c_sync_softrate
 #decode_routine := ss1.6_sync
-#decode_routine := ss1.6_sync_softrate
+decode_routine := ss1.6_sync_softrate
 #decode_routine := ss2_sync
 #decode_routine := ss2_sync_fast
 #decode_routine := ss2_sync_fixedrate
-decode_routine := ss2_sync_softrate
+#decode_routine := ss2_sync_softrate
 
 options := -D SOFTRATE=1
 
@@ -22,8 +24,10 @@ options := -D SOFTRATE=1
 #samples_subdir := cuba-baion-ss1c/
 #samples_subdir := cuba-baion/
 #samples_subdir := soad-35094/
-#samples_subdir := hyperprism-15980-ss1.6/
-samples_subdir := balancetogether-short-ss2/
+samples_subdir := hyperprism-15980-ss1.6/
+#samples_subdir := balancetogether-short-ss1/
+#samples_subdir := balancetogether-short-ss1c/
+#samples_subdir := balancetogether-short-ss2/
 
 #superblocks_file := superblocks_cuba-baion-14093-ss1.o
 #superblocks_file := superblocks_cuba-baion-19454-ss1.o
@@ -31,8 +35,10 @@ samples_subdir := balancetogether-short-ss2/
 #superblocks_file := superblocks_cuba-baion-19454-ss2.o
 #superblocks_file := superblocks_cuba-baion-19454-ss2-8kbank.o
 #superblocks_file := superblocks_soad-35094-ss2.o
-#superblocks_file := superblocks_hyperprism-15980-ss1.6.o
-superblocks_file := superblocks_balancetogether-19454-ss2.o
+superblocks_file := superblocks_hyperprism-15980-ss1.6.o
+#superblocks_file := superblocks_balancetogether-19454-ss1.o
+#superblocks_file := superblocks_balancetogether-19454-ss1c.o
+#superblocks_file := superblocks_balancetogether-19454-ss2.o
 
 #cfgfile := $(mapper_dir)/ssplayer-32k.cfg
 #cfgfile := $(mapper_dir)/ssplayer-64k.cfg
