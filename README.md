@@ -10,13 +10,21 @@ Sample player for **NES** using **SSDPCM** codec (originally designed by "Algori
   - **Buffered decompression** driven by NMI for **easy integration** into games and demos
   - 256-byte buffer - fits all sample rates
   - Automatic predictive buffer filling - fills buffer with as many samples as needed for an entire frame
+
 - Support for simpler mappers **without IRQ**
   - Trigger one-shot samples at any time
-  - No RAM buffer required
+  - No RAM buffer required - uses temporary addresses at $00..$0F for storing samples
   - NMI handler can be used for concurrent code execution (with some audio quality degradation)
   - On supported mappers: scanline IRQs can be used for triggering raster effects (with some audio quality degradation)
-- **SSDPCM** compression ratio of roughly 1:4 (2.13 bit/sample)
-  - 1:8 compression ratio (1.06 bit/sample) also possible, with quality way superior to standard NES **DPCM**
+  - Optional "softrate" mode for fine playback rate control - up to 25x finer depending on SSDPCM mode chosen
+    - Playback rate is updated automatically according to the value written to the coarse and fine playback rate addresses
+    - Caveat: playback routine must be loaded into RAM during playback
+
+- Various possible **SSDPCM** modes with different bitrates and compression ratios:
+  - `ss2` - roughly 1:4 compression (2.13 bits/sample)
+  - `ss1.6` - roughly 1:5 compression (1.7 bit/sample)
+  - `ss1` and `ss1c` - roughly 1:8 compression ratio (1.06 bit/sample)
+    - almost same compression ratio as standard NES DPCM, but quality is way superior
 
 ## Supported mappers
 
@@ -54,7 +62,7 @@ If you wish to use the code in this repository, you will need to provide a few e
 
 - **Encoded audio** _(TODO: include royalty-free examples)_
   - A compatible encoder can be found at: <https://github.com/Kagamiin/ssdpcm>
-  - The files should be placed inside `build/samples/` (or a subdirectory within)
+  - The files should be placed in a subdirectory inside `build/samples/`
 - **Generated files**
   - Header containing scopes for binaries and superblock header declarations
   - A generator script is included in `tools/make-scopes.py`, which will generate both of these from the encoded audio and place them in the `build/codegen` folder
